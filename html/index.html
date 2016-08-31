@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Rebate Calculator</title>
+  <link rel="stylesheet" href="../css/bootstrap.min.css">
+  <link rel="stylesheet" href="../css/bootstrap-theme.min.css">
+  <link rel="stylesheet" href="../css/index.css">
+  <script src="../js/bootstrap.min.js"></script>
+</head>
+
+<body style="margin: 2%">
+  <ul class="nav nav-tabs">
+    <li class="active"><a href="#">10<sup>th</sup></a></li>
+    <li><a href="#">20<sup>th</sup></a></li>
+    <li><a href="#">30<sup>th</sup></a></li>
+    <li style="float: right;">
+      <div class="btn-group">
+        <button type="button" class="btn btn-primary"><span class="glyphicon glyphicon-calendar" aria-hidden="true"></span> August 2016</button>
+        <button type="button" class="btn btn-default"><span class="glyphicon glyphicon-open-file" aria-hidden="true"></span> Switch Workspace</button>
+      </div>
+    </li>
+  </ul>
+
+  <div class="form-inline" style="margin-top: 7px;">
+    <div class="btn-group">
+      <button type="button" class="btn btn-default"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span> New Member</button>
+      <button type="button" class="btn btn-default"><span class="glyphicon glyphicon-print" aria-hidden="true"></span> Save to PDF</button>
+    </div>
+
+    <div class="input-group" style="float: right;">
+      <div class="input-group-btn">
+        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Name <span class="caret"></span></button>
+        <ul class="dropdown-menu">
+          <li><a href="#">Name</a></li>
+          <li><a href="#">ID</a></li>
+          <li><a href="#">Bank Name</a></li>
+        </ul>
+      </div>
+      <input type="text" class="form-control" aria-label="..." style="max-width: 300px;" placeholder="Filter...">
+    </div>
+  </div>
+
+  <table class="table table-striped table-hover">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>ID</th>
+        <th>HP No</th>
+        <th>IC No</th>
+        <th>Bank Name</th>
+        <th>Bank Acc</th>
+        <th>Email</th>
+        <th>Package</th>
+        <th>Remark</th>
+        <th>Profit</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <th>John Doe</th>
+        <th>88243</th>
+        <th>016-5542158</th>
+        <th>640514-08-5525</th>
+        <th>John Doe</th>
+        <th>9955225455625</th>
+        <th>springmaple@live.com.my</th>
+        <th>1000</th>
+        <th></th>
+        <th>50</th>
+      </tr>
+      <tr>
+        <th>Marry Me</th>
+        <th>84243</th>
+        <th>016-5542158</th>
+        <th>640514-08-5525</th>
+        <th>John Doe</th>
+        <th>9955225455625</th>
+        <th>springmaple@live.com.my</th>
+        <th>1000</th>
+        <th></th>
+        <th>50</th>
+      </tr>
+      <tr>
+        <th>Hug Me</th>
+        <th>88283</th>
+        <th>016-5542158</th>
+        <th>640514-08-5525</th>
+        <th>John Doe</th>
+        <th>9955225455625</th>
+        <th>springmaple@live.com.my</th>
+        <th>1000</th>
+        <th><span class="glyphicon glyphicon-comment" aria-hidden="true" data-toggle="tooltip" title="Some comments go here...">&middot;</span></th>
+        <th>50</th>
+      </tr>
+    </tbody>
+  </table>
+
+</body>
+
+</html>

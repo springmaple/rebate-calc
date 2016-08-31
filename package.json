@@ -1,0 +1,8 @@
+{
+  "name": "rebate-calc",
+  "version": "1.0.0",
+  "description": "A simple template app for Proton",
+  "main": "app.js",
+  "author": "SpringMaple",
+  "dependencies": {}
+}
