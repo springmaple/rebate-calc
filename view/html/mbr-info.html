@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Rebate Calculator - Member</title>
+  <link rel="stylesheet" href="../css/index.css">
+
+  <script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
+  <script src="../js/jquery-3.1.0.min.js"></script>
+  <script>if (window.module) module = window.module;</script>
+  <script>
+    const {getParamByName} = require('./../../app/util.js')
+    let _id = getParamByName('_id', window.location.href)
+    let _mbr = null 
+
+    const {ipcRenderer} = require('electron')
+    ipcRenderer.on('get-mbr', (evt, mbr) => {
+      _mbr = mbr
+      $('#mbr-name').val(mbr.mbrName)
+      $('#mbr-id').val(mbr.mbrId)
+      $('#mbr-hp').val(mbr.mbrHp)
+      $('#mbr-ic').val(mbr.mbrIc)
+      $('#mbr-email').val(mbr.mbrEmail)
+      $('#mbr-bank-name').val(mbr.mbrBankName)
+      $('#mbr-bank-acc').val(mbr.mbrBankAcc)
+      $('#mbr-join-date').val(mbr.mbrJoinDate)
+      $('#mbr-package').val(mbr.mbrPackage)
+      $('#mbr-remark').val(mbr.mbrRemark)
+    })
+
+    window.onload = function () {
+      ipcRenderer.send('get-mbr', _id)
+    }
+
+    ipcRenderer.on('upd-mbr', (evt, mbr) => {
+      _mbr = mbr
+    })
+
+    function updMbr() {
+      let m = {
+        mbrName: 'mbr-name',
+        mbrId: 'mbr-id',
+        mbrHp: 'mbr-hp', 
+        mbrIc: 'mbr-ic', 
+        mbrEmail: 'mbr-email',
+        mbrBankName: 'mbr-bank-name',
+        mbrBankAcc: 'mbr-bank-acc',
+        mbrJoinDate: 'mbr-join-date',
+        mbrPackage: 'mbr-package',
+        mbrRemark: 'mbr-remark'
+      }
+
+      let mbrToUpd = {}
+      for (let key in m) {
+        let val = m[key]
+        let inp = $(`#${val}`).val() 
+        if (inp != _mbr[key])
+          mbrToUpd[key] = inp
+      }
+
+      if (!$.isEmptyObject(mbrToUpd))
+        ipcRenderer.send('upd-mbr', {_id: _id, mbr: mbrToUpd})
+    }
+  </script>
+
+</head>
+
+<body>
+  <table>
+    <tr>
+      <td>Name:</td>
+      <td><input id="mbr-name"></td>
+    </tr>
+    <tr>
+      <td>ID:</td>
+      <td><input id="mbr-id"></td>
+    </tr>
+    <tr>
+      <td>HP No:</td>
+      <td><input id="mbr-hp"></td>
+    </tr>
+    <tr>
+      <td>IC No:</td>
+      <td><input id="mbr-ic"></td>
+    </tr>
+    <tr>
+      <td>Email:</td>
+      <td><input id="mbr-email"></td>
+    </tr>
+    <tr>
+      <td>Bank Name:</td>
+      <td><input id="mbr-bank-name"></td>
+    </tr>
+    <tr>
+      <td>Bank Acc:</td>
+      <td><input id="mbr-bank-acc"></td>
+    </tr>
+    <tr>
+      <td>Join Date:</td>
+      <td><input id="mbr-join-date"></td>
+    </tr>
+    <tr>
+      <td>Package:</td>
+      <td><input id="mbr-package"></td>
+    </tr>
+    <tr>
+      <td>Remark:</td>
+      <td><textarea id="mbr-remark"></textarea></td>
+    </tr>
+  </table>
+  <button onclick="updMbr()">Update</button>
+  <button onclick="window.history.back()">Back</button>
+</body>
+
+</html>
