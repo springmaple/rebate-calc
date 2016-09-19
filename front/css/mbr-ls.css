@@ -1,0 +1,13 @@
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 10px;
+}
+
+#mbr-profit {
+  background: none;
+  width: 35pt;
+  text-align: center;
+  border:0;
+  border-bottom: 2px dotted;
+}

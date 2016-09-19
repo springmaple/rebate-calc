@@ -2,7 +2,7 @@
   "name": "rebate-calc",
   "version": "1.0.0",
   "description": "A simple template app for Proton",
-  "main": "app/app.js",
+  "main": "app.js",
   "author": "SpringMaple",
   "dependencies": {
     "electron-prebuilt": "^1.4.0",

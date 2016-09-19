@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>New Member</title>
+
+  <link rel="stylesheet" href="../css/bootstrap.css">
+  <link rel="stylesheet" href="../css/bootstrap-theme.css">
+
+  <script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
+  <script src="../js/jquery-3.1.0.js"></script>
+  <script src="../js/boostrap.js"></script>
+  <script>if (window.module) module = window.module;</script>
+  <script>
+    const {ipcRenderer} = require('electron')
+    ipcRenderer.on('new-mbr', function (event, err) {
+      console.log(err)
+    })
+
+    function newMbr() {
+      let mbr = {
+        mbrName: $('#mbr-name').val(),
+        mbrId: $('#mbr-id').val(),
+        mbrHp: $('#mbr-hp').val(),
+        mbrIc: $('#mbr-ic').val(),
+        mbrEmail: $('#mbr-email').val(),
+        mbrBankName: $('#mbr-bank-name').val(),
+        mbrBankAcc: $('#mbr-bank-acc').val(),
+        mbrJoinDate: $('#mbr-join-date').val(),
+        mbrPackage: $('#mbr-package').val(),
+        mbrRemark: $('#mbr-remark').val()
+      }
+      ipcRenderer.send('new-mbr', mbr)
+    }
+  </script>
+</head>
+
+<body>
+  <div class="container">
+    <form class="form-horizontal">
+      <div class="form-group">
+        <label class="control-label col-sm-2" for="mbr-name">Name:</label>
+        <div class="col-sm-10">
+          <input type="text" class="form-control" id="mbr-name" placeholder="Enter name">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="control-label col-sm-2" for="mbr-id">ID:</label>
+        <div class="col-sm-10">
+          <input type="text" class="form-control" id="mbr-id" placeholder="Enter id">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="control-label col-sm-2" for="mbr-hp">Hp No:</label>
+        <div class="col-sm-10">
+          <input type="text" class="form-control" id="mbr-hp" placeholder="Enter hp no">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="control-label col-sm-2" for="mbr-ic">IC:</label>
+        <div class="col-sm-10">
+          <input type="text" class="form-control" id="mbr-ic" placeholder="Enter ic">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="control-label col-sm-2" for="mbr-email">Email:</label>
+        <div class="col-sm-10">
+          <input type="text" class="form-control" id="mbr-email" placeholder="Enter email">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="control-label col-sm-2" for="mbr-bank-name">Bank Name:</label>
+        <div class="col-sm-10">
+          <input type="text" class="form-control" id="mbr-bank-name" placeholder="Enter bank name">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="control-label col-sm-2" for="mbr-bank-acc">Bank Acc:</label>
+        <div class="col-sm-10">
+          <input type="text" class="form-control" id="mbr-bank-acc" placeholder="Enter bank acc">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="control-label col-sm-2" for="mbr-join-date">Join Date:</label>
+        <div class="col-sm-10">
+          <input type="text" class="form-control" id="mbr-join-date" placeholder="Enter join date">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="control-label col-sm-2" for="mbr-package">Package:</label>
+        <div class="col-sm-10">
+          <input type="text" class="form-control" id="mbr-package" placeholder="Enter package">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="control-label col-sm-2" for="mbr-remark">Remark:</label>
+        <div class="col-sm-10">
+          <textarea class="form-control" id="mbr-remark" rows="2" placeholder="Enter remark"></textarea>
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="col-sm-offset-2 col-sm-10">
+          <button type="button" onclick="newMbr()" class="btn btn-default">Create Member</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</body>
+
+</html>

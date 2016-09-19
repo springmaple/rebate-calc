@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Rebate Calculator</title>
+  
+  <link rel="stylesheet" href="../css/bootstrap.css">
+  <link rel="stylesheet" href="../css/bootstrap-theme.css">
+  <link rel="stylesheet" href="../css/mbr-ls.css">
+
+  <script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
+  <script src="../js/jquery-3.1.0.js"></script>
+  <script src="../js/boostrap.js"></script>
+  <script>if (window.module) module = window.module;</script>
+  <script>
+    const {ipcRenderer} = require('electron')
+    ipcRenderer.on('ls-mbr', (event, mbrs) => {
+
+      mbrsLen = mbrs.length
+      if (mbrsLen == 0) {
+        $('#mbr-ls-table-body').html('<tr><td colspan="11">No records.</td></tr>')
+
+      } else {
+        $('#mbr-ls-table-body').html('')
+        for (let i = 0; i < mbrsLen; i++) {
+          mbr = mbrs[i]
+          txt = (
+            `<td><a href="mbr-info.html?_id=${mbr._id}">${mbr.mbrName}</a></td>` +
+            `<td>${mbr.mbrId}</td>` +
+            `<td>${mbr.mbrHp}</td>` +
+            `<td>${mbr.mbrIc}</td>` +
+            `<td>${mbr.mbrEmail}</td>` +
+            `<td>${mbr.mbrBankName}</td>` +
+            `<td>${mbr.mbrBankAcc}</td>` +
+            `<td>${mbr.mbrJoinDate}</td>` +
+            `<td>${mbr.mbrPackage}</td>` +
+            `<td>${mbr.mbrRemark}</td>` +
+            `<td>12</td>`
+          )
+          $('#mbr-ls-table-body').append(`<tr id="${mbr._id}">${txt}</tr>`)
+        }
+
+        $('tr').dblclick(function () {
+          var id = $(this).attr('id');
+          console.log(id)
+        })
+      }
+
+    })
+
+    window.onload = function () {
+      ipcRenderer.send('ls-mbr', null)
+    }
+
+    ipcRenderer.on('ls-mbr-reload', function () {
+      ipcRenderer.send('ls-mbr', null)
+    })
+
+    function showMbrNew() {
+      ipcRenderer.send('show-mbr-new', null)
+    }
+
+  </script>
+
+</head>
+
+<body>
+  <div class="btn-group">
+    <button type="button" class="btn btn-primary btn-sm">30 Aug 2016</button>
+    <button type="button" class="btn btn-default btn-sm" onclick="showMbrNew()">New Member</button>
+  </div>
+  
+  <table class="table table-hover">
+    <thead>
+      <tr>
+        <td>Name</td>
+        <td>ID</td>
+        <td>HP No</td>
+        <td>IC No</td>
+        <td>Email</td>
+        <td>Bank Name</td>
+        <td>Bank Acc</td>
+        <td>Join Date</td>
+        <td>Package</td>
+        <td>Remark</td>
+        <td><input id='mbr-profit' placeholder="Profit">%</td>
+      </tr>
+    </thead>
+    <tbody id="mbr-ls-table-body">
+    </tbody>
+  </table>
+</body>
+
+</html>
