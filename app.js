@@ -2,11 +2,11 @@ const {app, BrowserWindow, ipcMain} = require('electron')
 const Datastore = require('nedb')
 const Util = require('./lib/util.js')
 
-var mbrDb = new Datastore()
+var mbrDb = new Datastore({})
 var workingDate = Util.getNearestDate()
 
 var win = null
-var mbrNewWin = null
+var popupWin = null
 
 app.on('browser-window-created', (e, window) => {
   window.setMenu(null)
@@ -23,19 +23,43 @@ app.on('ready', () => {
 
 
 ipcMain.on('show-mbr-new', (evt, arg) => {
-  mbrNewWin = new BrowserWindow({
+  popupWin = new BrowserWindow({
     parent: win,  
     modal: true,
     maximizable: false,
     minimizable: false,
     width: 800
   })
-  mbrNewWin.on('closed', () => {
-    mbrNewWin = null
+  popupWin.on('closed', () => {
+    popupWin = null
   })
-  mbrNewWin.loadURL(`file://${__dirname}/front/html/mbr-new.html`)
+  popupWin.loadURL(`file://${__dirname}/front/html/mbr-new.html`)
 })
 
+ipcMain.on('show-mbr-info', (evt, _id) => {
+  popupWin = new BrowserWindow({
+    parent: win,  
+    modal: true,
+    maximizable: false,
+    minimizable: false,
+  })
+  popupWin.on('closed', () => {
+    popupWin = null
+  })
+  popupWin.loadURL(`file://${__dirname}/front/html/mbr-info.html?_id=${_id}`)
+})
+
+ipcMain.on('show-mbr-rebate', (evt, _id) => {
+  popupWin = new BrowserWindow({
+    parent: win,  
+    modal: true,
+    minimizable: false,
+  })
+  popupWin.on('closed', () => {
+    popupWin = null
+  })
+  popupWin.loadURL(`file://${__dirname}/front/html/mbr-rebate.html?_id=${_id}`)
+})
 
 ipcMain.on('set-working-date', (evt, date) => {
   workingDate = date
@@ -48,7 +72,7 @@ ipcMain.on('new-mbr', (evt, mbr) => {
     if (err !== null) 
       evt.sender.send('new-mbr', err)
     else {
-      mbrNewWin.close()
+      popupWin.close()
       win.webContents.send('ls-mbr-reload', null)
     }
   })
@@ -73,7 +97,8 @@ ipcMain.on('upd-mbr', (evt, obj) => {
   // obj: {_id: 'xxx', mbr: {...}}
   mbrDb.update({_id: obj._id}, {$set: obj.mbr}, {returnUpdatedDocs: true}, 
     function(err, numAffected, affectedDocuments, upsert) {
-      evt.sender.send('upd-mbr', affectedDocuments)
+      popupWin.close()
+      win.webContents.send('ls-mbr-reload', null)
     }
   )
 })

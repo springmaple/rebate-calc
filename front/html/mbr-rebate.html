@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Rebate Calculator - Member</title>
+  <link rel="stylesheet" href="../css/bootstrap.css">
+  <link rel="stylesheet" href="../css/bootstrap-theme.css">
+  <link rel="stylesheet" href="../css/mbr-rebate.css">
+
+  <script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
+  <script src="../js/jquery-3.1.0.js"></script>
+  <script src="../js/boostrap.js"></script>
+  <script>if (window.module) module = window.module;</script>
+  <script>
+    const {getParamByName} = require('./../../lib/util.js')
+    let _id = getParamByName('_id', window.location.href)
+
+    const {ipcRenderer} = require('electron')
+    ipcRenderer.on('get-mbr', (evt, mbr) => {
+      $('#mbr-name').html(mbr.mbrName)
+      $('#mbr-email').html(mbr.mbrEmail)
+      $('#mbr-bank-name').html(mbr.mbrBankName)
+      $('#mbr-bank-acc').html(mbr.mbrBankAcc)
+      $('#mbr-package').html(mbr.mbrPackage)
+    })
+
+    window.onload = function () {
+      ipcRenderer.send('get-mbr', _id)
+    }
+  </script>
+
+</head>
+
+<body>
+  <form class="form-horizontal">
+    <h2 class="col-sm-12" id="mbr-name"><!-- INSERT MBR NAME --></h2>
+    <div class="form-group">
+      <label class="control-label col-sm-2" for="mbr-email">Email:</label>
+      <div class="col-sm-10" id="mbr-email"><!-- INSERT MBR EMAIL --></div>
+    </div>
+    <div class="form-group">
+      <label class="control-label col-sm-2" for="mbr-bank-name">Bank Name:</label>
+      <div class="col-sm-10" id="mbr-bank-name"><!-- INSERT MBR BANK NAME --></div>
+    </div>
+    <div class="form-group">
+      <label class="control-label col-sm-2" for="mbr-bank-acc">Bank Acc:</label>
+      <div class="col-sm-10" id="mbr-bank-acc"><!-- INSERT MBR BANK ACC --></div>
+    </div>
+    <div class="form-group">
+      <label class="control-label col-sm-2" for="mbr-package">Package:</label>
+      <div class="col-sm-10" id="mbr-package"><!-- INSERT MBR PACKAGE --></div>
+    </div>
+  </form>
+
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h3 class="panel-title">3%</h3>
+    </div>
+    <div class="panel-body">
+      <div class="wrap" id="rebate-ls-3">
+        <!-- INSERT REBATE LS 3 -->
+      </div>
+    </div>
+  </div>
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h3 class="panel-title">2%</h3>
+    </div>
+    <div class="panel-body">
+      <div class="no-wrap" id="rebate-ls-2">
+        <!-- INSERT REBATE LS 2 -->
+      </div>
+    </div>
+  </div>
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h3 class="panel-title">1%</h3>
+    </div>
+    <div class="panel-body">
+      <div class="no-wrap" id="rebate-ls-1">
+        <!-- INSERT REBATE LS 1 -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    for (let i = 1; i <= 3; i ++) {
+      let cnts = ''
+      for (let j = 0; j < 30; j++) {
+        let cnt = `<li><ul class="list-group">
+                    <li class="list-group-item">
+                      <div class="btn-group" data-toggle="buttons">
+                        <label class="btn btn-default active">
+                          <input type="radio" name="options" id="option1" checked>10
+                        </label>
+                        <label class="btn btn-default">
+                          <input type="radio" name="options" id="option2">20
+                        </label>
+                        <label class="btn btn-default">
+                          <input type="radio" name="options" id="option3">30
+                        </label>
+                      </div>
+                    </li>
+                    <li class="list-group-item"><input class="cnt-input" placeholder="Name"></li>
+                    <li class="list-group-item"><input class="cnt-input" placeholder="Package"></li>
+                  </ul></li>`
+        cnts += cnt
+      }
+      $(`#rebate-ls-${i}`).html(`<ul class="cnt-ul">${cnts}</ul>`)
+    }
+  </script>
+
+</body>
+
+</html>

@@ -25,7 +25,7 @@
         for (let i = 0; i < mbrsLen; i++) {
           mbr = mbrs[i]
           txt = (
-            `<td><a href="mbr-info.html?_id=${mbr._id}">${mbr.mbrName}</a></td>` +
+            `<td><a href="javascript:showMbrInfo('${mbr._id}')">${mbr.mbrName}</a></td>` +
             `<td>${mbr.mbrId}</td>` +
             `<td>${mbr.mbrHp}</td>` +
             `<td>${mbr.mbrIc}</td>` +
@@ -37,27 +37,30 @@
             `<td>${mbr.mbrRemark}</td>` +
             `<td>12</td>`
           )
-          $('#mbr-ls-table-body').append(`<tr id="${mbr._id}">${txt}</tr>`)
+          $('#mbr-ls-table-body').append(`<tr mbr-_id="${mbr._id}">${txt}</tr>`)
         }
 
         $('tr').dblclick(function () {
-          var id = $(this).attr('id');
-          console.log(id)
+          var _id = $(this).attr('mbr-_id');
+          if (_id)
+            ipcRenderer.send('show-mbr-rebate', _id)
         })
       }
-
     })
 
-    window.onload = function () {
+    var lsMbr = function () {
       ipcRenderer.send('ls-mbr', null)
     }
 
-    ipcRenderer.on('ls-mbr-reload', function () {
-      ipcRenderer.send('ls-mbr', null)
-    })
+    window.onload = lsMbr
+    ipcRenderer.on('ls-mbr-reload', lsMbr)
 
     function showMbrNew() {
       ipcRenderer.send('show-mbr-new', null)
+    }
+
+    function showMbrInfo(_id) {
+      ipcRenderer.send('show-mbr-info', _id)
     }
 
   </script>

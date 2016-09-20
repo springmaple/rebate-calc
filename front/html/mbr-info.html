@@ -3,13 +3,17 @@
 
 <head>
   <title>Rebate Calculator - Member</title>
-  <link rel="stylesheet" href="../css/index.css">
+
+  <link rel="stylesheet" href="../css/bootstrap.css">
+  <link rel="stylesheet" href="../css/bootstrap-theme.css">
+  <link rel="stylesheet" href="../css/mbr-ls.css">
 
   <script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
   <script src="../js/jquery-3.1.0.js"></script>
+  <script src="../js/boostrap.js"></script>
   <script>if (window.module) module = window.module;</script>
   <script>
-    const {getParamByName} = require('./../../app/util.js')
+    const {getParamByName} = require('./../../lib/util.js')
     let _id = getParamByName('_id', window.location.href)
     let _mbr = null 
 
@@ -31,10 +35,6 @@
     window.onload = function () {
       ipcRenderer.send('get-mbr', _id)
     }
-
-    ipcRenderer.on('upd-mbr', (evt, mbr) => {
-      _mbr = mbr
-    })
 
     function updMbr() {
       let m = {
@@ -61,55 +61,85 @@
       if (!$.isEmptyObject(mbrToUpd))
         ipcRenderer.send('upd-mbr', {_id: _id, mbr: mbrToUpd})
     }
+
+    function cnlUpdMbr() {
+      window.close()
+    }
   </script>
 
 </head>
 
 <body>
-  <table>
-    <tr>
-      <td>Name:</td>
-      <td><input id="mbr-name"></td>
-    </tr>
-    <tr>
-      <td>ID:</td>
-      <td><input id="mbr-id"></td>
-    </tr>
-    <tr>
-      <td>HP No:</td>
-      <td><input id="mbr-hp"></td>
-    </tr>
-    <tr>
-      <td>IC No:</td>
-      <td><input id="mbr-ic"></td>
-    </tr>
-    <tr>
-      <td>Email:</td>
-      <td><input id="mbr-email"></td>
-    </tr>
-    <tr>
-      <td>Bank Name:</td>
-      <td><input id="mbr-bank-name"></td>
-    </tr>
-    <tr>
-      <td>Bank Acc:</td>
-      <td><input id="mbr-bank-acc"></td>
-    </tr>
-    <tr>
-      <td>Join Date:</td>
-      <td><input id="mbr-join-date"></td>
-    </tr>
-    <tr>
-      <td>Package:</td>
-      <td><input id="mbr-package"></td>
-    </tr>
-    <tr>
-      <td>Remark:</td>
-      <td><textarea id="mbr-remark"></textarea></td>
-    </tr>
-  </table>
-  <button onclick="updMbr()">Update</button>
-  <button onclick="window.history.back()">Back</button>
+  <div class="container">
+    <form class="form-horizontal">
+      <div class="form-group">
+        <label class="control-label col-sm-2" for="mbr-name">Name:</label>
+        <div class="col-sm-10">
+          <input type="text" class="form-control" id="mbr-name" placeholder="Enter name">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="control-label col-sm-2" for="mbr-id">ID:</label>
+        <div class="col-sm-10">
+          <input type="text" class="form-control" id="mbr-id" placeholder="Enter id">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="control-label col-sm-2" for="mbr-hp">Hp No:</label>
+        <div class="col-sm-10">
+          <input type="text" class="form-control" id="mbr-hp" placeholder="Enter hp no">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="control-label col-sm-2" for="mbr-ic">IC:</label>
+        <div class="col-sm-10">
+          <input type="text" class="form-control" id="mbr-ic" placeholder="Enter ic">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="control-label col-sm-2" for="mbr-email">Email:</label>
+        <div class="col-sm-10">
+          <input type="text" class="form-control" id="mbr-email" placeholder="Enter email">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="control-label col-sm-2" for="mbr-bank-name">Bank Name:</label>
+        <div class="col-sm-10">
+          <input type="text" class="form-control" id="mbr-bank-name" placeholder="Enter bank name">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="control-label col-sm-2" for="mbr-bank-acc">Bank Acc:</label>
+        <div class="col-sm-10">
+          <input type="text" class="form-control" id="mbr-bank-acc" placeholder="Enter bank acc">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="control-label col-sm-2" for="mbr-join-date">Join Date:</label>
+        <div class="col-sm-10">
+          <input type="text" class="form-control" id="mbr-join-date" placeholder="Enter join date">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="control-label col-sm-2" for="mbr-package">Package:</label>
+        <div class="col-sm-10">
+          <input type="text" class="form-control" id="mbr-package" placeholder="Enter package">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="control-label col-sm-2" for="mbr-remark">Remark:</label>
+        <div class="col-sm-10">
+          <textarea class="form-control" id="mbr-remark" rows="2" placeholder="Enter remark"></textarea>
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="col-sm-offset-2 col-sm-10">
+          <button onclick="updMbr()">Update</button>
+          <button onclick="cnlUpdMbr()">Cancel</button>
+        </div>
+      </div>
+    </form>
+  </div>
 </body>
 
 </html>
