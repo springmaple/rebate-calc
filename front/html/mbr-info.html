@@ -2,69 +2,66 @@
 <html>
 
 <head>
-  <title>Rebate Calculator - Member</title>
+  <title>Member</title>
 
   <link rel="stylesheet" href="../css/bootstrap.css">
   <link rel="stylesheet" href="../css/bootstrap-theme.css">
-  <link rel="stylesheet" href="../css/mbr-ls.css">
 
   <script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
   <script src="../js/jquery-3.1.0.js"></script>
   <script src="../js/boostrap.js"></script>
   <script>if (window.module) module = window.module;</script>
   <script>
-    const {getParamByName} = require('./../../lib/util.js')
-    let _id = getParamByName('_id', window.location.href)
-    let _mbr = null 
-
     const {ipcRenderer} = require('electron')
-    ipcRenderer.on('get-mbr', (evt, mbr) => {
-      _mbr = mbr
-      $('#mbr-name').val(mbr.mbrName)
-      $('#mbr-id').val(mbr.mbrId)
-      $('#mbr-hp').val(mbr.mbrHp)
-      $('#mbr-ic').val(mbr.mbrIc)
-      $('#mbr-email').val(mbr.mbrEmail)
-      $('#mbr-bank-name').val(mbr.mbrBankName)
-      $('#mbr-bank-acc').val(mbr.mbrBankAcc)
-      $('#mbr-join-date').val(mbr.mbrJoinDate)
-      $('#mbr-package').val(mbr.mbrPackage)
-      $('#mbr-remark').val(mbr.mbrRemark)
-    })
+    const {getParamByName} = require('./../../lib/util.js')
+    const map = {
+      mbrName: 'mbr-name',
+      mbrId: 'mbr-id',
+      mbrHp: 'mbr-hp', 
+      mbrIc: 'mbr-ic', 
+      mbrEmail: 'mbr-email',
+      mbrBankName: 'mbr-bank-name',
+      mbrBankAcc: 'mbr-bank-acc',
+      mbrJoinDate: 'mbr-join-date',
+      mbrPackage: 'mbr-package',
+      mbrRemark: 'mbr-remark'
+    }
+    const _id = getParamByName('_id', window.location.href)
+    
+    var _mbr = null
+    var cnlUpdMbr = window.close
 
-    window.onload = function () {
-      ipcRenderer.send('get-mbr', _id)
+    function newMbr() {
+      let mbrToIns = {}
+      for (let key in map)
+        mbrToIns[key] = $(`#${map[key]}`).val()
+      ipcRenderer.send('new-mbr', mbrToIns)
+      cnlUpdMbr()
     }
 
     function updMbr() {
-      let m = {
-        mbrName: 'mbr-name',
-        mbrId: 'mbr-id',
-        mbrHp: 'mbr-hp', 
-        mbrIc: 'mbr-ic', 
-        mbrEmail: 'mbr-email',
-        mbrBankName: 'mbr-bank-name',
-        mbrBankAcc: 'mbr-bank-acc',
-        mbrJoinDate: 'mbr-join-date',
-        mbrPackage: 'mbr-package',
-        mbrRemark: 'mbr-remark'
-      }
-
       let mbrToUpd = {}
-      for (let key in m) {
-        let val = m[key]
-        let inp = $(`#${val}`).val() 
-        if (inp != _mbr[key])
-          mbrToUpd[key] = inp
+      for (let key in map) {
+        let value = $(`#${map[key]}`).val() 
+        if (value != _mbr[key])
+          mbrToUpd[key] = value
       }
 
       if (!$.isEmptyObject(mbrToUpd))
         ipcRenderer.send('upd-mbr', {_id: _id, mbr: mbrToUpd})
+      cnlUpdMbr()
     }
 
-    function cnlUpdMbr() {
-      window.close()
-    }
+    ipcRenderer.on('get-mbr', (evt, mbr) => {
+      _mbr = mbr
+      for (let key in map)
+        $(`#${map[key]}`).val(mbr[key]) 
+    })
+
+    if (_id)
+      window.onload = function () {
+        ipcRenderer.send('get-mbr', _id)
+      }
   </script>
 
 </head>
@@ -133,13 +130,21 @@
         </div>
       </div>
       <div class="form-group">
-        <div class="col-sm-offset-2 col-sm-10">
-          <button onclick="updMbr()">Update</button>
-          <button onclick="cnlUpdMbr()">Cancel</button>
+        <div class="col-sm-offset-2 col-sm-10" id="form-btn">
+          <!-- INSERT BTN HERE -->
         </div>
       </div>
     </form>
   </div>
+  <script>
+    let btnTxt = null
+    if (!_id)
+      btnTxt = `<button onclick="newMbr()" class="btn btn-primary">Create Member</button>`
+    else
+      btnTxt = `<button onclick="updMbr()" class="btn btn-primary">Update</button>
+                <button onclick="cnlUpdMbr()" class="btn btn-default">Cancel</button>`
+    $('#form-btn').html(btnTxt)
+  </script>
 </body>
 
 </html>

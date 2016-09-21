@@ -4,6 +4,12 @@ html, body {
   padding: 10px;
 }
 
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
 .cnt-input {
   background: none;
   width: 100%;

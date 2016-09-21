@@ -3,7 +3,7 @@
 
 <head>
   <title>Rebate Calculator</title>
-  
+
   <link rel="stylesheet" href="../css/bootstrap.css">
   <link rel="stylesheet" href="../css/bootstrap-theme.css">
   <link rel="stylesheet" href="../css/mbr-ls.css">
@@ -12,57 +12,84 @@
   <script src="../js/jquery-3.1.0.js"></script>
   <script src="../js/boostrap.js"></script>
   <script>if (window.module) module = window.module;</script>
+
   <script>
     const {ipcRenderer} = require('electron')
-    ipcRenderer.on('ls-mbr', (event, mbrs) => {
+    const {toTwoDecimal} = require('./../../lib/util.js')
 
-      mbrsLen = mbrs.length
-      if (mbrsLen == 0) {
-        $('#mbr-ls-table-body').html('<tr><td colspan="11">No records.</td></tr>')
-
-      } else {
-        $('#mbr-ls-table-body').html('')
-        for (let i = 0; i < mbrsLen; i++) {
-          mbr = mbrs[i]
-          txt = (
-            `<td><a href="javascript:showMbrInfo('${mbr._id}')">${mbr.mbrName}</a></td>` +
-            `<td>${mbr.mbrId}</td>` +
-            `<td>${mbr.mbrHp}</td>` +
-            `<td>${mbr.mbrIc}</td>` +
-            `<td>${mbr.mbrEmail}</td>` +
-            `<td>${mbr.mbrBankName}</td>` +
-            `<td>${mbr.mbrBankAcc}</td>` +
-            `<td>${mbr.mbrJoinDate}</td>` +
-            `<td>${mbr.mbrPackage}</td>` +
-            `<td>${mbr.mbrRemark}</td>` +
-            `<td>12</td>`
-          )
-          $('#mbr-ls-table-body').append(`<tr mbr-_id="${mbr._id}">${txt}</tr>`)
-        }
-
-        $('tr').dblclick(function () {
-          var _id = $(this).attr('mbr-_id');
-          if (_id)
-            ipcRenderer.send('show-mbr-rebate', _id)
-        })
-      }
-    })
-
-    var lsMbr = function () {
+    function lsMbr() {
       ipcRenderer.send('ls-mbr', null)
     }
 
-    window.onload = lsMbr
-    ipcRenderer.on('ls-mbr-reload', lsMbr)
-
-    function showMbrNew() {
-      ipcRenderer.send('show-mbr-new', null)
-    }
-
     function showMbrInfo(_id) {
+      // show create new member form if _id is null.
       ipcRenderer.send('show-mbr-info', _id)
     }
 
+    ipcRenderer.on('ls-mbr', (evt, mbrs) => {
+      mbrsLen = mbrs.length
+      if (!mbrsLen)
+        $('#mbr-ls-table-body').html('<tr><td colspan="11">No records.</td></tr>')
+
+      else {
+        let profitPct = toTwoDecimal($('#mbr-profit').val())
+        let body = ''
+
+        for (mbr of mbrs) {
+          let profit = toTwoDecimal(toTwoDecimal(mbr.mbrPackage) * profitPct / 100)
+          if (isNaN(profit))
+            profit = 'N/A'
+
+          body += `
+            <tr class="mbr-tr" mbrId="${mbr._id}">
+              <td><a href="javascript:showMbrInfo('${mbr._id}')">${mbr.mbrName}</a></td>
+              <td>${mbr.mbrId}</td>
+              <td>${mbr.mbrHp}</td>
+              <td>${mbr.mbrIc}</td>
+              <td>${mbr.mbrEmail}</td>
+              <td>${mbr.mbrBankName}</td>
+              <td>${mbr.mbrBankAcc}</td>
+              <td>${mbr.mbrJoinDate}</td>
+              <td>${mbr.mbrPackage}</td>
+              <td>${mbr.mbrRemark}</td>
+              <td>${profit}</td>
+            </tr>`
+        }
+
+        $('#mbr-ls-table-body').html(body)
+
+        $('.mbr-tr').dblclick(function() {
+          let _id = $(this).attr('mbrId')
+          ipcRenderer.send('show-mbr-rebate', _id)
+        })
+      }
+    })
+    
+    window.onload = function () {
+      lsMbr()
+
+      let mbrProfit = $('#mbr-profit') 
+      
+      mbrProfit.focusout(e => {
+        let rawInput = mbrProfit.val() 
+        let parsedInput = toTwoDecimal(rawInput)
+        if (isNaN(parsedInput))
+          parsedInput = ''
+        else if (parsedInput < 0)
+          parsedInput = 0
+        else if (parsedInput > 999.99)
+          parsedInput = 999.99
+
+        mbrProfit.val(parsedInput.toString())
+        
+        lsMbr()
+      })
+      
+      mbrProfit.keypress(e => {
+        if (e.which == 13)
+          mbrProfit.blur()
+      })
+    }
   </script>
 
 </head>
@@ -70,9 +97,9 @@
 <body>
   <div class="btn-group">
     <button type="button" class="btn btn-primary btn-sm">30 Aug 2016</button>
-    <button type="button" class="btn btn-default btn-sm" onclick="showMbrNew()">New Member</button>
+    <button type="button" class="btn btn-default btn-sm" onclick="showMbrInfo(null)">New Member</button>
   </div>
-  
+
   <table class="table table-hover">
     <thead>
       <tr>
@@ -86,10 +113,11 @@
         <td>Join Date</td>
         <td>Package</td>
         <td>Remark</td>
-        <td><input id='mbr-profit' placeholder="Profit">%</td>
+        <td><input id='mbr-profit' placeholder="Profit" type="number" onfocus="this.select();">%</td>
       </tr>
     </thead>
     <tbody id="mbr-ls-table-body">
+      <!-- INSERT MBR LS HERE -->
     </tbody>
   </table>
 </body>
