@@ -64,7 +64,12 @@ ipcMain.on('show-mbr-rebate', (evt, _id) => {
 
 ipcMain.on('set-working-date', (evt, date) => {
   workingDate = date
+  win.webContents.send('get-working-date', Util.splitDate(workingDate))
   lsMbr()
+})
+
+ipcMain.on('get-working-date', (evt, arg) => {
+  evt.sender.send('get-working-date', Util.splitDate(workingDate))
 })
 
 ipcMain.on('new-mbr', (evt, mbr) => {

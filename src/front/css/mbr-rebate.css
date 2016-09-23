@@ -1,7 +1,10 @@
 html, body {
-  height: 100%;
   margin: 0;
   padding: 10px;
+}
+
+#mbr-navibar {
+  margin-bottom: 20px;
 }
 
 input[type="number"]::-webkit-outer-spin-button,
@@ -37,4 +40,15 @@ input[type="number"]::-webkit-inner-spin-button {
 
 .wrap {
   white-space: wrap;
+}
+
+.no-input-box {
+  border: none;
+  -webkit-box-shadow: none;
+  box-shadow: none;
+  background: none;
+}
+
+.rebate-panel-head :hover {
+  cursor: pointer;
 }

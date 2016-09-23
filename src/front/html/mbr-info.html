@@ -6,6 +6,7 @@
 
   <link rel="stylesheet" href="../css/bootstrap.css">
   <link rel="stylesheet" href="../css/bootstrap-theme.css">
+  <link rel="stylesheet" href="../css/mbr-info.css">
 
   <script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
   <script src="../js/jquery-3.1.0.js"></script>
@@ -31,7 +32,27 @@
     var _mbr = null
     var cnlUpdMbr = window.close
 
+    function rmErr() {
+      $('#form-error').html('')
+    }
+
+    function prevalidate() {
+      if ($('#mbr-name').val().length == 0) {
+        $('#form-error').html(`
+          <div class="alert alert-danger">
+            <a href="javascript:rmErr()" class="close" aria-label="close">&times;</a>
+            <strong>Validation!</strong> Fill in member name.
+          </div>`)
+        return false
+      }
+      let mbrPackage = $('#mbr-package') 
+      mbrPackage.val(floatToString(mbrPackage.val()))
+      return true
+    }
+
     function newMbr() {
+      if (!prevalidate())
+        return false
       let mbrToIns = {}
       for (let key in map)
         mbrToIns[key] = $(`#${map[key]}`).val()
@@ -40,6 +61,9 @@
     }
 
     function updMbr() {
+      if (!prevalidate())
+        return false
+      
       let mbrToUpd = {}
       for (let key in map) {
         let value = $(`#${map[key]}`).val() 
@@ -49,6 +73,7 @@
 
       if (!$.isEmptyObject(mbrToUpd))
         ipcRenderer.send('upd-mbr', {_id: _id, mbr: mbrToUpd})
+
       cnlUpdMbr()
     }
 
@@ -72,14 +97,36 @@
       mbrPackage.focusout(evt => {
         mbrPackage.val(floatToString(mbrPackage.val(), 2))
       })
+
+      let mbrName = $('#mbr-name') 
+      mbrName.focusout(evt => {
+        if (mbrName.val().length > 0)
+          rmErr()
+      })
     }
   </script>
 
 </head>
 
 <body>
+  <div id="mbr-navibar">
+    <script>
+      if (_id) {
+        $('#mbr-navibar').html(`
+          <ul class="nav nav-tabs nav-justified">
+            <li class="active"><a href="#">Info</a></li>
+            <li><a href="mbr-rebate.html?_id=${_id}">Calculator</a></li>
+          </ul>`)
+      }
+    </script>
+  </div>
+  
   <div class="container">
-    <form class="form-horizontal">
+    <div id="form-error">
+      <!-- INSERT ERROR HERE -->
+    </div>
+
+    <form class="form-horizontal" onsubmit="return false">
       <div class="form-group">
         <label class="control-label col-sm-2" for="mbr-name">Name:</label>
         <div class="col-sm-10">
@@ -147,6 +194,7 @@
       </div>
     </form>
   </div>
+
 </body>
 
 </html>

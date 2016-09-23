@@ -13,11 +13,23 @@ function getNearestDate() {
   return y * 10000 + m * 100 + n  // e.g 20160920
 }
 
+function joinDate(y, m, d) {
+  return y * 10000 + m * 100 + d
+}
+
+function splitDate(d) {
+  return {
+    y: Math.floor(d/10000),
+    m: Math.floor((d%10000)/100),
+    d: Math.floor(d%100) 
+  }
+}
+
 function getParamByName(name, url) {
   /* Extract query value from URL. */
   name = name.replace(/[\[\]]/g, "\\$&");
   var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
-      results = regex.exec(url);
+    results = regex.exec(url);
   if (!results) return null;
   if (!results[2]) return '';
   return decodeURIComponent(results[2].replace(/\+/g, " "));
@@ -48,6 +60,8 @@ function validateFloat(val, min, max) {
 
 module.exports = {
   getNearestDate: getNearestDate,
+  joinDate: joinDate,
+  splitDate: splitDate,
   getParamByName: getParamByName,
   toFloat: toFloat,
   floatToString: floatToString,

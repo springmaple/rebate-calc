@@ -15,10 +15,26 @@
 
   <script>
     const {ipcRenderer} = require('electron')
-    const {toFloat, floatToString, validateFloat} = require('./../../lib/util.js')
+    const {toFloat, floatToString, validateFloat, joinDate} = require('./../../lib/util.js')
 
     function lsMbr() {
       ipcRenderer.send('ls-mbr', null)
+    }
+
+    function setWorkingDate() {
+      let m = parseInt($('#working-date-month').val())
+      let y = parseInt($('#working-date-year').val())
+      let d = null
+      $('#working-date-day li').each((idx, e) => {
+        e = $(e)
+        if (e.hasClass('active'))
+          d = (idx + 1) * 10
+      })
+      ipcRenderer.send('set-working-date', joinDate(y, m, d))
+    }
+
+    function getWorkingDate() {
+      ipcRenderer.send('get-working-date', null)
     }
 
     function getMbrProfit() {
@@ -27,6 +43,20 @@
 
     function showMbrInfo(_id) {  // show create new member form if _id is null.
       ipcRenderer.send('show-mbr-info', _id)
+    }
+
+    function selectDay(d) {
+      let dayElement = $('#working-date-day li')
+      for (let i=0; i<3; i++) {
+        e = $(dayElement[i])
+        if (d == i) {
+          if (e.hasClass('active'))
+            return
+          e.addClass('active')
+        } else
+          e.removeClass('active')
+      }
+      setWorkingDate()
     }
 
     ipcRenderer.on('ls-mbr', (evt, mbrs) => {
@@ -74,6 +104,20 @@
       $('#mbr-profit').val(floatToString(profit, 2))
       lsMbr()
     })
+
+    ipcRenderer.on('get-working-date', (evt, d) => {
+      $('#working-date-month').val(d.m)
+      $('#working-date-year').val(d.y)
+      let dayElement = $('#working-date-day li')
+      let j = (d.d / 10) - 1
+      for (let i=0; i<3; i++) {
+        let e = $(dayElement[i])
+        if (i == j)
+          e.addClass('active')
+        else
+          e.removeClass('active')
+      }
+    })
     
     window.onload = function () {
       let mbrProfit = $('#mbr-profit') 
@@ -88,6 +132,10 @@
           mbrProfit.blur()
       })
 
+      $('#working-date-month').change(setWorkingDate)
+      $('#working-date-year').change(setWorkingDate)
+
+      getWorkingDate()
       getMbrProfit()
     }
   </script>
@@ -100,22 +148,22 @@
       <div class="navbar-header">
         <span class="navbar-brand">Working Date</span>
       </div>
-      <ul class="nav navbar-nav">
-        <li class="active"><a href="#">10</a></li>
-        <li><a href="#">20</a></li>
-        <li><a href="#">30</a></li>
+      <ul class="nav navbar-nav" id="working-date-day">
+        <li><a href="javascript:selectDay(0)">10</a></li>
+        <li><a href="javascript:selectDay(1)">20</a></li>
+        <li><a href="javascript:selectDay(2)">30</a></li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
-        <li><a href="#"><select class="working-date-select" id="working-date-month"><!-- INSERT MONTHS HERE --></select></a></li>
-        <li><a href="#"><select class="working-date-select" id="working-date-year"><!-- INSERT YEARS HERE --></select></a></li>
+        <li><a href="javascript:void(0)"><select class="working-date-select" id="working-date-month"><!-- INSERT MONTHS HERE --></select></a></li>
+        <li><a href="javascript:void(0)"><select class="working-date-select" id="working-date-year"><!-- INSERT YEARS HERE --></select></a></li>
       </ul>
     </div>
   </nav>
   <script>
     let monthNames = [ "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" ]
     let cnt = ''
-    for (let i=0; i<12; i++)
-      cnt += `<option value="${i}">${monthNames[i]}</option>`
+    for (let i=1; i<=12; i++)
+      cnt += `<option value="${i}">${monthNames[i-1]}</option>`
     $('#working-date-month').html(cnt)
 
     let y = (new Date()).getFullYear()
@@ -125,22 +173,25 @@
     $('#working-date-year').html(cnt)
   </script>
 
-  <p>Action: <a href="javascript:showMbrInfo(null)">New Member</a></p>
+  <ol class="breadcrumb">
+    <li><a href="javascript:showMbrInfo(null)">New Member</a></li>
+    <li><a href="javascript:showMbrInfo(null)">Print</a></li>
+  </ol>
 
   <table class="table table-hover">
     <thead>
       <tr>
-        <td>Name</td>
-        <td>ID</td>
-        <td>HP No</td>
-        <td>IC No</td>
-        <td>Email</td>
-        <td>Bank Name</td>
-        <td>Bank Acc</td>
-        <td>Join Date</td>
-        <td>Package</td>
-        <td>Remark</td>
-        <td><input id='mbr-profit' placeholder="Profit" type="number" onfocus="this.select();">%</td>
+        <td><strong>Name</strong></td>
+        <td><strong>ID</strong></td>
+        <td><strong>HP No</strong></td>
+        <td><strong>IC No</strong></td>
+        <td><strong>Email</strong></td>
+        <td><strong>Bank Name</strong></td>
+        <td><strong>Bank Acc</strong></td>
+        <td><strong>Join Date</strong></td>
+        <td><strong>Package</strong></td>
+        <td><strong>Remark</strong></td>
+        <td><input id='mbr-profit' placeholder="Profit" type="number" onfocus="this.select();"><strong>%</strong></td>
       </tr>
     </thead>
     <tbody id="mbr-ls-table-body">

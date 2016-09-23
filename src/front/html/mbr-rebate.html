@@ -2,7 +2,7 @@
 <html>
 
 <head>
-  <title>Calculator</title>
+  <title>Member</title>
   <link rel="stylesheet" href="../css/bootstrap.css">
   <link rel="stylesheet" href="../css/bootstrap-theme.css">
   <link rel="stylesheet" href="../css/mbr-rebate.css">
@@ -15,13 +15,28 @@
     const {getParamByName} = require('./../../lib/util.js')
     const {ipcRenderer} = require('electron')
     const _id = getParamByName('_id', window.location.href)
+    const map = {
+      mbrName: 'mbr-name',
+      mbrEmail: 'mbr-email',
+      mbrBankName: 'mbr-bank-name',
+      mbrBankAcc: 'mbr-bank-acc',
+      mbrPackage: 'mbr-package'
+    }
+
+    function togglePanel(id) {
+      let panel = $(`#${id}`)
+      if (panel.hasClass('wrap')) {
+        panel.removeClass('wrap')
+        panel.addClass('no-wrap')
+      } else {
+        panel.removeClass('no-wrap')
+        panel.addClass('wrap')
+      }
+    }
     
     ipcRenderer.on('get-mbr', (evt, mbr) => {
-      $('#mbr-name').html(mbr.mbrName)
-      $('#mbr-email').html(mbr.mbrEmail)
-      $('#mbr-bank-name').html(mbr.mbrBankName)
-      $('#mbr-bank-acc').html(mbr.mbrBankAcc)
-      $('#mbr-package').html(mbr.mbrPackage)
+      for (key in map)
+        $(`#${map[key]}`).html(mbr[key])
     })
 
     window.onload = function () {
@@ -32,38 +47,51 @@
 </head>
 
 <body>
+  <div id="mbr-navibar">
+    <script>
+      $('#mbr-navibar').html(`
+        <ul class="nav nav-tabs nav-justified">
+          <li><a href="mbr-info.html?_id=${_id}">Info</a></li>
+          <li class="active"><a href="">Calculator</a></li>
+        </ul>`)
+    </script>
+  </div>
+
   <form class="form-horizontal">
-    <h2 class="col-sm-12" id="mbr-name">
-      <!-- INSERT MBR NAME -->
-    </h2>
     <div class="form-group">
-      <label class="control-label col-sm-2" for="mbr-email">Email:</label>
-      <div class="col-sm-10" id="mbr-email">
-        <!-- INSERT MBR EMAIL -->
+      <label class="control-label col-sm-2" for="mbr-name-box">Name:</label>
+      <div class="col-sm-10" id="mbr-name-box">
+        <div class="form-control no-input-box" id="mbr-name"><!-- INSERT MBR NAME --></div>
       </div>
     </div>
     <div class="form-group">
-      <label class="control-label col-sm-2" for="mbr-bank-name">Bank Name:</label>
-      <div class="col-sm-10" id="mbr-bank-name">
-        <!-- INSERT MBR BANK NAME -->
+      <label class="control-label col-sm-2" for="mbr-email-box">Email:</label>
+      <div class="col-sm-10" id="mbr-email-box">
+        <div class="form-control no-input-box" id="mbr-email"><!-- INSERT MBR EMAIL --></div>
       </div>
     </div>
     <div class="form-group">
-      <label class="control-label col-sm-2" for="mbr-bank-acc">Bank Acc:</label>
-      <div class="col-sm-10" id="mbr-bank-acc">
-        <!-- INSERT MBR BANK ACC -->
+      <label class="control-label col-sm-2" for="mbr-bank-name-box">Bank Name:</label>
+      <div class="col-sm-10" id="mbr-bank-name-box">
+        <div class="form-control no-input-box" id="mbr-bank-name"><!-- INSERT MBR BANK NAME --></div>
       </div>
     </div>
     <div class="form-group">
-      <label class="control-label col-sm-2" for="mbr-package">Package:</label>
-      <div class="col-sm-10" id="mbr-package">
-        <!-- INSERT MBR PACKAGE -->
+      <label class="control-label col-sm-2" for="mbr-bank-acc-box">Bank Acc:</label>
+      <div class="col-sm-10" id="mbr-bank-acc-box">
+        <div class="form-control no-input-box" id="mbr-bank-acc"><!-- INSERT MBR BANK ACC --></div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="control-label col-sm-2" for="mbr-package-box">Package:</label>
+      <div class="col-sm-10" id="mbr-package-box">
+        <div class="form-control no-input-box" id="mbr-package-box"><!-- INSERT MBR PACKAGE --></div>
       </div>
     </div>
   </form>
 
   <div class="panel panel-default">
-    <div class="panel-heading">
+    <div class="panel-heading rebate-panel-head" onclick="togglePanel('rebate-ls-3')">
       <h3 class="panel-title">3%</h3>
     </div>
     <div class="panel-body">
@@ -73,7 +101,7 @@
     </div>
   </div>
   <div class="panel panel-default">
-    <div class="panel-heading">
+    <div class="panel-heading rebate-panel-head" onclick="togglePanel('rebate-ls-2')">
       <h3 class="panel-title">2%</h3>
     </div>
     <div class="panel-body">
@@ -83,7 +111,7 @@
     </div>
   </div>
   <div class="panel panel-default">
-    <div class="panel-heading">
+    <div class="panel-heading rebate-panel-head" onclick="togglePanel('rebate-ls-1')">
       <h3 class="panel-title">1%</h3>
     </div>
     <div class="panel-body">
