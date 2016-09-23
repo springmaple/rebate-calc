@@ -13,7 +13,7 @@
   <script>if (window.module) module = window.module;</script>
   <script>
     const {ipcRenderer} = require('electron')
-    const {getParamByName} = require('./../../lib/util.js')
+    const {getParamByName, floatToString} = require('./../../lib/util.js')
     const map = {
       mbrName: 'mbr-name',
       mbrId: 'mbr-id',
@@ -58,10 +58,21 @@
         $(`#${map[key]}`).val(mbr[key]) 
     })
 
-    if (_id)
-      window.onload = function () {
+    window.onload = function () {
+      let btnTxt = null
+      if (_id) {
         ipcRenderer.send('get-mbr', _id)
-      }
+        btnTxt = `<button onclick="updMbr()" class="btn btn-primary">Update</button>
+                  <button onclick="cnlUpdMbr()" class="btn btn-default">Cancel</button>`
+      } else
+        btnTxt = `<button onclick="newMbr()" class="btn btn-primary">Create Member</button>`
+      $('#form-btn').html(btnTxt)
+
+      let mbrPackage = $('#mbr-package') 
+      mbrPackage.focusout(evt => {
+        mbrPackage.val(floatToString(mbrPackage.val(), 2))
+      })
+    }
   </script>
 
 </head>
@@ -136,15 +147,6 @@
       </div>
     </form>
   </div>
-  <script>
-    let btnTxt = null
-    if (!_id)
-      btnTxt = `<button onclick="newMbr()" class="btn btn-primary">Create Member</button>`
-    else
-      btnTxt = `<button onclick="updMbr()" class="btn btn-primary">Update</button>
-                <button onclick="cnlUpdMbr()" class="btn btn-default">Cancel</button>`
-    $('#form-btn').html(btnTxt)
-  </script>
 </body>
 
 </html>

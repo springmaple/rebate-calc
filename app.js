@@ -3,10 +3,11 @@ const Datastore = require('nedb')
 const Util = require('./lib/util.js')
 const htmlPath = `file://${__dirname}/front/html`
 
-var mbrDb = new Datastore({})
+var mbrDb = new Datastore({ filename: 'app.db', autoload: true })
 var workingDate = Util.getNearestDate()
 var win = null
 var popWin = null
+
 
 function lsMbr() {
   mbrDb.find({ _startDate: { $lte: workingDate }, _doc: 'mbr' })
@@ -38,7 +39,6 @@ ipcMain.on('show-mbr-info', (evt, _id) => {
   popWin = new BrowserWindow({
     parent: win,
     modal: true,
-    maximizable: false,
     minimizable: false,
   })
   popWin.on('closed', () => {
@@ -84,3 +84,21 @@ ipcMain.on('get-mbr', (evt, _id) => {
 })
 
 ipcMain.on('ls-mbr', lsMbr)
+
+ipcMain.on('set-mbr-profit', (evt, profit) => {
+  query = { _doc: 'profit', _date: workingDate }
+  if (profit === null)
+    mbrDb.remove(query)
+  else
+    mbrDb.update(query, { $set: { mbrProfit: profit } }, {},
+      (err, numAff) => {
+        if (!numAff)
+          mbrDb.insert({ _doc: 'profit', _date: workingDate, mbrProfit: profit })
+      })
+})
+
+ipcMain.on('get-mbr-profit', (evt, profit) => {
+  mbrDb.findOne({ _doc: 'profit', _date: workingDate }, (err, profit) => {
+    evt.sender.send('get-mbr-profit', profit ? profit.mbrProfit : null)
+  })
+})

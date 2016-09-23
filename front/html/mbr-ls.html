@@ -15,14 +15,17 @@
 
   <script>
     const {ipcRenderer} = require('electron')
-    const {toTwoDecimal} = require('./../../lib/util.js')
+    const {toFloat, floatToString, validateFloat} = require('./../../lib/util.js')
 
     function lsMbr() {
       ipcRenderer.send('ls-mbr', null)
     }
 
-    function showMbrInfo(_id) {
-      // show create new member form if _id is null.
+    function getMbrProfit() {
+      ipcRenderer.send('get-mbr-profit', null)
+    }
+
+    function showMbrInfo(_id) {  // show create new member form if _id is null.
       ipcRenderer.send('show-mbr-info', _id)
     }
 
@@ -32,13 +35,15 @@
         $('#mbr-ls-table-body').html('<tr><td colspan="11">No records.</td></tr>')
 
       else {
-        let profitPct = toTwoDecimal($('#mbr-profit').val())
+        let profitPct = toFloat($('#mbr-profit').val(), 2)
         let body = ''
 
         for (mbr of mbrs) {
-          let profit = toTwoDecimal(toTwoDecimal(mbr.mbrPackage) * profitPct / 100)
+          let profit = toFloat(toFloat(mbr.mbrPackage, 2) * profitPct / 100, 2)
           if (isNaN(profit))
             profit = 'N/A'
+          else
+            profit = floatToString(profit, 2)
 
           body += `
             <tr class="mbr-tr" mbrId="${mbr._id}">
@@ -50,7 +55,7 @@
               <td>${mbr.mbrBankName}</td>
               <td>${mbr.mbrBankAcc}</td>
               <td>${mbr.mbrJoinDate}</td>
-              <td>${mbr.mbrPackage}</td>
+              <td>${floatToString(mbr.mbrPackage, 2)}</td>
               <td>${mbr.mbrRemark}</td>
               <td>${profit}</td>
             </tr>`
@@ -64,41 +69,63 @@
         })
       }
     })
+
+    ipcRenderer.on('get-mbr-profit', (evt, profit) => {
+      $('#mbr-profit').val(floatToString(profit, 2))
+      lsMbr()
+    })
     
     window.onload = function () {
-      lsMbr()
-
       let mbrProfit = $('#mbr-profit') 
-      
-      mbrProfit.focusout(e => {
-        let rawInput = mbrProfit.val() 
-        let parsedInput = toTwoDecimal(rawInput)
-        if (isNaN(parsedInput))
-          parsedInput = ''
-        else if (parsedInput < 0)
-          parsedInput = 0
-        else if (parsedInput > 999.99)
-          parsedInput = 999.99
-
-        mbrProfit.val(parsedInput.toString())
-        
+      mbrProfit.focusout(evt => {
+        let parsedInput = validateFloat(mbrProfit.val())
+        mbrProfit.val(floatToString(parsedInput, 2))
+        ipcRenderer.send('set-mbr-profit', parsedInput)
         lsMbr()
       })
-      
-      mbrProfit.keypress(e => {
-        if (e.which == 13)
+      mbrProfit.keypress(evt => {
+        if (evt.which == 13)
           mbrProfit.blur()
       })
+
+      getMbrProfit()
     }
   </script>
 
 </head>
 
 <body>
-  <div class="btn-group">
-    <button type="button" class="btn btn-primary btn-sm">30 Aug 2016</button>
-    <button type="button" class="btn btn-default btn-sm" onclick="showMbrInfo(null)">New Member</button>
-  </div>
+  <nav class="navbar navbar-default">
+    <div class="container-fluid">
+      <div class="navbar-header">
+        <span class="navbar-brand">Working Date</span>
+      </div>
+      <ul class="nav navbar-nav">
+        <li class="active"><a href="#">10</a></li>
+        <li><a href="#">20</a></li>
+        <li><a href="#">30</a></li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li><a href="#"><select class="working-date-select" id="working-date-month"><!-- INSERT MONTHS HERE --></select></a></li>
+        <li><a href="#"><select class="working-date-select" id="working-date-year"><!-- INSERT YEARS HERE --></select></a></li>
+      </ul>
+    </div>
+  </nav>
+  <script>
+    let monthNames = [ "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" ]
+    let cnt = ''
+    for (let i=0; i<12; i++)
+      cnt += `<option value="${i}">${monthNames[i]}</option>`
+    $('#working-date-month').html(cnt)
+
+    let y = (new Date()).getFullYear()
+    cnt = ''
+    for (let i=y-5; i<=y+5; i++)
+      cnt += `<option value="${i}">${i}</option>`
+    $('#working-date-year').html(cnt)
+  </script>
+
+  <p>Action: <a href="javascript:showMbrInfo(null)">New Member</a></p>
 
   <table class="table table-hover">
     <thead>

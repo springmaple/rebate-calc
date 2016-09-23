@@ -10,6 +10,14 @@ input[type="number"]::-webkit-inner-spin-button {
     margin: 0;
 }
 
+.working-date-select {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  width: 100px;
+}
+
 #mbr-profit {
   background: none;
   width: 35pt;
