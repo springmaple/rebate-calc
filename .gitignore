@@ -220,3 +220,4 @@ node_modules/
 
 .vscode/
 .gitignore
+app/app.db
