@@ -216,8 +216,8 @@ pip-log.txt
 .mr.developer.cfg
 
 # nodejs modules
-node_modules/
+src/node_modules/
+src/app.db
 
 .vscode/
 .gitignore
-app/app.db
