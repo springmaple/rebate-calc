@@ -1,2 +1,1 @@
-cd src
-node_modules\.bin\electron . --enable-logging
+src\node_modules\.bin\electron src\ --enable-logging

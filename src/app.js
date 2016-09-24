@@ -3,7 +3,7 @@ const Datastore = require('nedb')
 const Util = require('./lib/util.js')
 const htmlPath = `file://${__dirname}/front/html`
 
-var mbrDb = new Datastore({ filename: 'app.db', autoload: true })
+var mbrDb = new Datastore({ filename: `${__dirname}\\app.db`, autoload: true })
 var workingDate = Util.getNearestDate()
 var win = null
 var popWin = null

@@ -23,17 +23,6 @@
       mbrPackage: 'mbr-package'
     }
 
-    function togglePanel(id) {
-      let panel = $(`#${id}`)
-      if (panel.hasClass('wrap')) {
-        panel.removeClass('wrap')
-        panel.addClass('no-wrap')
-      } else {
-        panel.removeClass('no-wrap')
-        panel.addClass('wrap')
-      }
-    }
-    
     ipcRenderer.on('get-mbr', (evt, mbr) => {
       for (key in map)
         $(`#${map[key]}`).html(mbr[key])
@@ -90,43 +79,60 @@
     </div>
   </form>
 
-  <div class="panel panel-default">
-    <div class="panel-heading rebate-panel-head" onclick="togglePanel('rebate-ls-3')">
-      <h3 class="panel-title">3%</h3>
-    </div>
-    <div class="panel-body">
-      <div class="no-wrap" id="rebate-ls-3">
-        <!-- INSERT REBATE LS 3 -->
-      </div>
-    </div>
-  </div>
-  <div class="panel panel-default">
-    <div class="panel-heading rebate-panel-head" onclick="togglePanel('rebate-ls-2')">
-      <h3 class="panel-title">2%</h3>
-    </div>
-    <div class="panel-body">
-      <div class="no-wrap" id="rebate-ls-2">
-        <!-- INSERT REBATE LS 2 -->
-      </div>
-    </div>
-  </div>
-  <div class="panel panel-default">
-    <div class="panel-heading rebate-panel-head" onclick="togglePanel('rebate-ls-1')">
-      <h3 class="panel-title">1%</h3>
-    </div>
-    <div class="panel-body">
-      <div class="no-wrap" id="rebate-ls-1">
-        <!-- INSERT REBATE LS 1 -->
-      </div>
-    </div>
-  </div>
+  <div id="rebate-panels"><!-- INSERT 3 PANELS --></div>
   <script>
-    for (let i = 1; i <= 3; i ++) {
+    let rebatePanels = $('#rebate-panels')
+    for (let i=3; i>=1; i--) {
+      let rebatePanelHeadId = `rebate-panel-head-${i}`
+      let rebatePanelBodyId = `rebate-panel-body-${i}`
+      rebatePanels.append(`
+        <div class="panel panel-default">
+          <div class="panel-heading rebate-panel-head" id="${rebatePanelHeadId}">
+            <h3 class="panel-title">${i}%</h3>
+          </div>
+          <div class="panel-body">
+            <div class="row">
+              <div class="col-md-9 rebate-panel-body-col no-wrap" id="${rebatePanelBodyId}">
+                <!-- INSERT MBR-LS HERE -->
+              </div>
+              <div class="col-md-3 rebate-panel-body-col">
+                <table class="table table-bordered rebate-panel-subtotal">
+                  <thead>
+                    <tr>
+                      <th><span>10</span><span class="badge">30</span></th>
+                      <th><span>20</span><span class="badge">12</span></th>
+                      <th><span>30</span><span class="badge"></span></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>3000.00</td>
+                      <td>3000.00</td>
+                      <td>3000.00</td>
+                    </tr>
+                    <tr>
+                      <td>30000.00</td>
+                      <td>30000.00</td>
+                      <td>30000.00</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>`)
+      $(`#${rebatePanelHeadId}`).dblclick(rebatePanelBodyId, function(evt) {
+        $(`#${evt.data}`).toggleClass('wrap no-wrap')
+      })
+    }
+
+    for (let i=3; i>=1; i--) {
       let cnts = ''
       for (let j = 0; j < 30; j++)
         cnts += `
           <li>
             <ul class="list-group">
+
               <li class="list-group-item">
                 <div class="btn-group" data-toggle="buttons">
                   <label class="btn btn-default active">
@@ -140,16 +146,17 @@
                   </label>
                 </div>
               </li>
+
               <li class="list-group-item">
                 <input class="cnt-input" placeholder="Name">
               </li>
+
               <li class="list-group-item">
                 <input class="cnt-input" placeholder="Package" type="number">
               </li>
             </ul>
           </li>`
-
-      $(`#rebate-ls-${i}`).html(`<ul class="cnt-ul">${cnts}</ul>`)
+      $(`#rebate-panel-body-${i}`).html(`<ul class="cnt-ul">${cnts}</ul>`)
     }
   </script>
 
