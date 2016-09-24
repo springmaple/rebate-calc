@@ -84,14 +84,71 @@
     })
 
     window.onload = function () {
-      let btnTxt = null
+      if (_id)
+        ipcRenderer.send('get-mbr', _id)
+    }
+  </script>
+
+</head>
+
+<body>
+  <div id="mbr-navibar"><!-- INSERT NAVI BAR --></div>
+  <script>
+    if (_id)
+      $('#mbr-navibar').html(`
+        <ul class="nav nav-tabs nav-justified">
+          <li class="active"><a href="#">Info</a></li>
+          <li><a href="mbr-rebate.html?_id=${_id}">Calculator</a></li>
+        </ul>`)
+  </script>
+  
+  <div class="container">
+    <div id="form-error"><!-- INSERT ERROR HERE --></div>
+    <form class="form-horizontal" onsubmit="return false" id="rebate-mbr-info"><!-- INSERT FORM CONTROLS --></form>
+    <script>
+      let mbrInfoElementMap = [
+        {label: 'Name', id: 'mbr-name', type: 'text', ph: 'Enter name'},
+        {label: 'ID', id: 'mbr-id', type: 'text', ph: 'Enter id'},
+        {label: 'Hp No', id: 'mbr-hp', type: 'text', ph: 'Enter hp no'},
+        {label: 'IC', id: 'mbr-ic', type: 'text', ph: 'Enter ic'},
+        {label: 'Email', id: 'mbr-email', type: 'text', ph: 'Enter email'},
+        {label: 'Bank Name', id: 'mbr-bank-name', type: 'text', ph: 'Enter bank name'},
+        {label: 'Bank Acc', id: 'mbr-bank-acc', type: 'text', ph: 'Enter bank acc'},
+        {label: 'Join Date', id: 'mbr-join-date', type: 'text', ph: 'Enter join date'},
+        {label: 'Package', id: 'mbr-package', type: 'number', ph: 'Enter package'}
+      ]
+      let mbrInfo = $('#rebate-mbr-info')
+      for ({label, id, type, ph} of mbrInfoElementMap) {
+        mbrInfo.append(`
+          <div class="form-group">
+            <label class="control-label col-sm-2" for="${id}">${label}:</label>
+            <div class="col-sm-10">
+              <input type="${type}" class="form-control" id="${id}" placeholder="${ph}">
+            </div>
+          </div>`)
+      }
+      mbrInfo.append(`
+        <div class="form-group">
+          <label class="control-label col-sm-2" for="mbr-remark">Remark:</label>
+          <div class="col-sm-10">
+            <textarea class="form-control" id="mbr-remark" rows="2" placeholder="Enter remark"></textarea>
+          </div>
+        </div>`)
+
+      let btnHtml = null
       if (_id) {
         ipcRenderer.send('get-mbr', _id)
-        btnTxt = `<button onclick="updMbr()" class="btn btn-primary">Update</button>
-                  <button onclick="cnlUpdMbr()" class="btn btn-default">Cancel</button>`
+        btnHtml = `<button onclick="updMbr()" class="btn btn-primary">Update</button>
+                   <button onclick="cnlUpdMbr()" class="btn btn-default">Cancel</button>`
       } else
-        btnTxt = `<button onclick="newMbr()" class="btn btn-primary">Create Member</button>`
-      $('#form-btn').html(btnTxt)
+        btnHtml = `<button onclick="newMbr()" class="btn btn-primary">Create Member</button>`
+
+      mbrInfo.append(`
+        <div class="form-group">
+          <div class="col-sm-offset-2 col-sm-10">
+            ${btnHtml}
+          </div>
+        </div>`)
 
       let mbrPackage = $('#mbr-package') 
       mbrPackage.focusout(evt => {
@@ -103,96 +160,7 @@
         if (mbrName.val().length > 0)
           rmErr()
       })
-    }
-  </script>
-
-</head>
-
-<body>
-  <div id="mbr-navibar">
-    <script>
-      if (_id) {
-        $('#mbr-navibar').html(`
-          <ul class="nav nav-tabs nav-justified">
-            <li class="active"><a href="#">Info</a></li>
-            <li><a href="mbr-rebate.html?_id=${_id}">Calculator</a></li>
-          </ul>`)
-      }
     </script>
-  </div>
-  
-  <div class="container">
-    <div id="form-error">
-      <!-- INSERT ERROR HERE -->
-    </div>
-
-    <form class="form-horizontal" onsubmit="return false">
-      <div class="form-group">
-        <label class="control-label col-sm-2" for="mbr-name">Name:</label>
-        <div class="col-sm-10">
-          <input type="text" class="form-control" id="mbr-name" placeholder="Enter name">
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="control-label col-sm-2" for="mbr-id">ID:</label>
-        <div class="col-sm-10">
-          <input type="text" class="form-control" id="mbr-id" placeholder="Enter id">
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="control-label col-sm-2" for="mbr-hp">Hp No:</label>
-        <div class="col-sm-10">
-          <input type="text" class="form-control" id="mbr-hp" placeholder="Enter hp no">
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="control-label col-sm-2" for="mbr-ic">IC:</label>
-        <div class="col-sm-10">
-          <input type="text" class="form-control" id="mbr-ic" placeholder="Enter ic">
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="control-label col-sm-2" for="mbr-email">Email:</label>
-        <div class="col-sm-10">
-          <input type="text" class="form-control" id="mbr-email" placeholder="Enter email">
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="control-label col-sm-2" for="mbr-bank-name">Bank Name:</label>
-        <div class="col-sm-10">
-          <input type="text" class="form-control" id="mbr-bank-name" placeholder="Enter bank name">
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="control-label col-sm-2" for="mbr-bank-acc">Bank Acc:</label>
-        <div class="col-sm-10">
-          <input type="text" class="form-control" id="mbr-bank-acc" placeholder="Enter bank acc">
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="control-label col-sm-2" for="mbr-join-date">Join Date:</label>
-        <div class="col-sm-10">
-          <input type="text" class="form-control" id="mbr-join-date" placeholder="Enter join date">
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="control-label col-sm-2" for="mbr-package">Package:</label>
-        <div class="col-sm-10">
-          <input type="text" class="form-control" id="mbr-package" placeholder="Enter package">
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="control-label col-sm-2" for="mbr-remark">Remark:</label>
-        <div class="col-sm-10">
-          <textarea class="form-control" id="mbr-remark" rows="2" placeholder="Enter remark"></textarea>
-        </div>
-      </div>
-      <div class="form-group">
-        <div class="col-sm-offset-2 col-sm-10" id="form-btn">
-          <!-- INSERT BTN HERE -->
-        </div>
-      </div>
-    </form>
   </div>
 
 </body>

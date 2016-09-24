@@ -12,7 +12,7 @@
   <script src="../js/boostrap.js"></script>
   <script>if (window.module) module = window.module;</script>
   <script>
-    const {getParamByName} = require('./../../lib/util.js')
+    const {getParamByName, floatToString, toFloat} = require('./../../lib/util.js')
     const {ipcRenderer} = require('electron')
     const _id = getParamByName('_id', window.location.href)
     const map = {
@@ -21,6 +21,42 @@
       mbrBankName: 'mbr-bank-name',
       mbrBankAcc: 'mbr-bank-acc',
       mbrPackage: 'mbr-package'
+    }
+
+    function updSubtotal(i) {
+      i = parseInt(i)
+      let data = {10: 0, 20: 0, 30: 0}   
+      let dataCount = {10: 0, 20: 0, 30: 0}
+
+      for (let j=0; j<30; j++) {
+        let rebateMbrDatesId = `input:checkbox[name="rebate-mbr-date-${i}-${j}"]`
+        let rebateMbrNameId = `rebate-mbr-package-${i}-${j}`
+        let rebateMbrPackageId = `rebate-mbr-package-${i}-${j}`
+
+        let mbrPackage = toFloat($(rebateMbrPackageId), 2)
+        let mbrNameDate = null
+        let rebateMbrDates = $(rebateMbrDatesId)
+        for (let k=0; k<3; k++) {
+          let e = $(rebateMbrDates[k])
+          if (e.hasClass('active')) {
+            mbrNameDate = e.attr('val')
+            break
+          }
+        }
+
+        if (!isNaN(mbrPackage) && mbrNameDate !== null) {
+          let key = parseInt(mbrNameDate) 
+          data[key] += mbrPackage
+          dataCount[key] += 1
+        }
+      }
+
+      for (key in data) {
+        let mbrPackage = data[key]
+        $(`rebate-subtotal-${i}-${key}-count`).html(dataCount[key])
+        $(`rebate-subtotal-${i}-${key}-total`).html(floatToString(mbrPackage))
+        $(`rebate-subtotal-${i}-${key}`).html(floatToString(mbrPackage * i / 100, 2))
+      }
     }
 
     ipcRenderer.on('get-mbr', (evt, mbr) => {
@@ -37,49 +73,42 @@
 
 <body>
   <div id="mbr-navibar">
-    <script>
-      $('#mbr-navibar').html(`
-        <ul class="nav nav-tabs nav-justified">
-          <li><a href="mbr-info.html?_id=${_id}">Info</a></li>
-          <li class="active"><a href="">Calculator</a></li>
-        </ul>`)
-    </script>
+    <!-- INSERT NAVI BAR -->
   </div>
+  <script>
+    $('#mbr-navibar').html(`
+      <ul class="nav nav-tabs nav-justified">
+        <li><a href="mbr-info.html?_id=${_id}">Info</a></li>
+        <li class="active"><a href="">Calculator</a></li>
+      </ul>`)
+  </script>
 
-  <form class="form-horizontal">
-    <div class="form-group">
-      <label class="control-label col-sm-2" for="mbr-name-box">Name:</label>
-      <div class="col-sm-10" id="mbr-name-box">
-        <div class="form-control no-input-box" id="mbr-name"><!-- INSERT MBR NAME --></div>
-      </div>
-    </div>
-    <div class="form-group">
-      <label class="control-label col-sm-2" for="mbr-email-box">Email:</label>
-      <div class="col-sm-10" id="mbr-email-box">
-        <div class="form-control no-input-box" id="mbr-email"><!-- INSERT MBR EMAIL --></div>
-      </div>
-    </div>
-    <div class="form-group">
-      <label class="control-label col-sm-2" for="mbr-bank-name-box">Bank Name:</label>
-      <div class="col-sm-10" id="mbr-bank-name-box">
-        <div class="form-control no-input-box" id="mbr-bank-name"><!-- INSERT MBR BANK NAME --></div>
-      </div>
-    </div>
-    <div class="form-group">
-      <label class="control-label col-sm-2" for="mbr-bank-acc-box">Bank Acc:</label>
-      <div class="col-sm-10" id="mbr-bank-acc-box">
-        <div class="form-control no-input-box" id="mbr-bank-acc"><!-- INSERT MBR BANK ACC --></div>
-      </div>
-    </div>
-    <div class="form-group">
-      <label class="control-label col-sm-2" for="mbr-package-box">Package:</label>
-      <div class="col-sm-10" id="mbr-package-box">
-        <div class="form-control no-input-box" id="mbr-package-box"><!-- INSERT MBR PACKAGE --></div>
-      </div>
-    </div>
+  <form class="form-horizontal" id="rebate-mbr-info">
+    <!-- INSERT MBR INFO ELEMENTS HERE -->
   </form>
+  <script>
+    let mbrInfoElementMap = [
+      {label: 'Name', id: 'mbr-name'},
+      {label: 'Email', id: 'mbr-email'},
+      {label: 'Bank Name', id: 'mbr-bank-name'},
+      {label: 'Bank Acc', id: 'mbr-bank'},
+      {label: 'Package', id: 'mbr-package'}
+    ]
+    let rebateMbrInfo = $('#rebate-mbr-info')
+    for ({label, id} of mbrInfoElementMap) {
+      rebateMbrInfo.append(`
+      <div class="form-group">
+        <label class="control-label col-sm-2" for="${id}-lbl">${label}:</label>
+          <div class="col-sm-10" id="${id}-lbl">
+            <div class="form-control no-input-box" id="${id}"><!-- INSERT MBR INFO --></div>
+          </div>
+      </div>`)
+    }
+  </script>
 
-  <div id="rebate-panels"><!-- INSERT 3 PANELS --></div>
+  <div id="rebate-panels">
+    <!-- INSERT 3 PANELS -->
+  </div>
   <script>
     let rebatePanels = $('#rebate-panels')
     for (let i=3; i>=1; i--) {
@@ -99,21 +128,30 @@
                 <table class="table table-bordered rebate-panel-subtotal">
                   <thead>
                     <tr>
-                      <th><span>10</span><span class="badge">30</span></th>
-                      <th><span>20</span><span class="badge">12</span></th>
-                      <th><span>30</span><span class="badge"></span></th>
+                      <th>
+                        <span>10</span>
+                        <span id="rebate-subtotal-${i}-10-count" class="badge"><!-- DATA --></span>
+                      </th>
+                      <th>
+                        <span>20</span>
+                        <span id="rebate-subtotal-${i}-20-count" class="badge"><!-- DATA --></span>
+                      </th>
+                      <th>
+                        <span>30</span>
+                        <span id="rebate-subtotal-${i}-30-count" class="badge"><!-- DATA --></span>
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr>
-                      <td>3000.00</td>
-                      <td>3000.00</td>
-                      <td>3000.00</td>
+                      <td><span id="rebate-subtotal-${i}-10-total"><!-- DATA --></span></td>
+                      <td><span id="rebate-subtotal-${i}-20-total"><!-- DATA --></span></td>
+                      <td><span id="rebate-subtotal-${i}-30-total"><!-- DATA --></span></td>
                     </tr>
                     <tr>
-                      <td>30000.00</td>
-                      <td>30000.00</td>
-                      <td>30000.00</td>
+                      <td><span id="rebate-subtotal-${i}-10"><!-- DATA --></span></td>
+                      <td><span id="rebate-subtotal-${i}-20"><!-- DATA --></span></td>
+                      <td><span id="rebate-subtotal-${i}-30"><!-- DATA --></span></td>
                     </tr>
                   </tbody>
                 </table>
@@ -127,36 +165,73 @@
     }
 
     for (let i=3; i>=1; i--) {
-      let cnts = ''
-      for (let j = 0; j < 30; j++)
-        cnts += `
+      let rebatePanelBody = $(`#rebate-panel-body-${i}`)
+      let rebateMbrHtml = ''
+      for (let j=0; j<30; j++) {
+        let rebateMbrDateId = `rebate-mbr-date-${i}-${j}`
+        let rebateMbrNameId = `rebate-mbr-name-${i}-${j}`
+        let rebateMbrPackageId = `rebate-mbr-package-${i}-${j}`
+        rebateMbrHtml += `
           <li>
             <ul class="list-group">
-
               <li class="list-group-item">
                 <div class="btn-group" data-toggle="buttons">
-                  <label class="btn btn-default active">
-                    <input type="radio" name="options" id="option1" checked>10
+                  <label class="btn btn-default">
+                    <input type="checkbox" name="${rebateMbrDateId}" val="10" i="${i}">10
                   </label>
                   <label class="btn btn-default">
-                    <input type="radio" name="options" id="option2">20
+                    <input type="checkbox" name="${rebateMbrDateId}" val="20" i="${i}">20
                   </label>
                   <label class="btn btn-default">
-                    <input type="radio" name="options" id="option3">30
+                    <input type="checkbox" name="${rebateMbrDateId}" val="30" i="${i}">30
                   </label>
                 </div>
               </li>
 
               <li class="list-group-item">
-                <input class="cnt-input" placeholder="Name">
+                <input class="cnt-input" placeholder="Name" id="${rebateMbrNameId}" i="${i}">
               </li>
 
               <li class="list-group-item">
-                <input class="cnt-input" placeholder="Package" type="number">
+                <input class="cnt-input" placeholder="Package" type="number" id="${rebateMbrPackageId}" i="${i}">
               </li>
             </ul>
           </li>`
-      $(`#rebate-panel-body-${i}`).html(`<ul class="cnt-ul">${cnts}</ul>`)
+      }
+      rebatePanelBody.html(`<ul class="cnt-ul">${rebateMbrHtml}</ul>`)
+    }
+
+    for (let i=3; i>=1; i--) {
+      for (let j=0; j<30; j++) {
+        let rebateMbrPackage = $(`#rebate-mbr-package-${i}-${j}`) 
+        rebateMbrPackage.focusout(function(evt) {
+          let e = $(this)
+          let inp = toFloat(e.val(), 2)
+          e.val(floatToString(inp, 2))
+          updSubtotal(e.attr('i'))
+        })
+        rebateMbrPackage.keypress(function(evt) {
+          if (evt.which == 13)
+            $(this).blur()
+        })
+        rebateMbrPackage.focus(function(){
+          this.select()
+        })
+
+        let rebateMbrDatesId = `input:checkbox[name="rebate-mbr-date-${i}-${j}"]`
+        $(rebateMbrDatesId).change({rebateMbrDatesId: rebateMbrDatesId}, function(evt) {
+          let selectedVal = $(this).attr('val')
+          let rebateMbrDates = $(evt.data.rebateMbrDatesId)
+          for (let i=0; i<3; i++) {
+            let e = $(rebateMbrDates[i])
+            if (selectedVal == e.attr('val'))
+              e.parent().toggleClass('active')
+            else
+              e.parent().removeClass('active')
+          }
+          updSubtotal($(this).attr('i'))
+        })
+      }
     }
   </script>
 

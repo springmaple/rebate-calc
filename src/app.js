@@ -23,6 +23,12 @@ function onMbrChanged(err) {
   lsMbr()
 }
 
+function getProfit() {
+  mbrDb.findOne({ _doc: 'profit', _date: workingDate }, (err, profit) => {
+    win.webContents.send('get-mbr-profit', profit ? profit.mbrProfit : null)
+  })
+}
+
 app.on('browser-window-created', (e, window) => {
   window.setMenu(null)
 })
@@ -65,7 +71,7 @@ ipcMain.on('show-mbr-rebate', (evt, _id) => {
 ipcMain.on('set-working-date', (evt, date) => {
   workingDate = date
   win.webContents.send('get-working-date', Util.splitDate(workingDate))
-  lsMbr()
+  getProfit()
 })
 
 ipcMain.on('get-working-date', (evt, arg) => {
@@ -102,8 +108,4 @@ ipcMain.on('set-mbr-profit', (evt, profit) => {
       })
 })
 
-ipcMain.on('get-mbr-profit', (evt, profit) => {
-  mbrDb.findOne({ _doc: 'profit', _date: workingDate }, (err, profit) => {
-    evt.sender.send('get-mbr-profit', profit ? profit.mbrProfit : null)
-  })
-})
+ipcMain.on('get-mbr-profit', getProfit)

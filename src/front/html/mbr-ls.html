@@ -15,7 +15,7 @@
 
   <script>
     const {ipcRenderer} = require('electron')
-    const {toFloat, floatToString, validateFloat, joinDate} = require('./../../lib/util.js')
+    const {toFloat, floatToString, joinDate} = require('./../../lib/util.js')
 
     function lsMbr() {
       ipcRenderer.send('ls-mbr', null)
@@ -120,18 +120,6 @@
     })
     
     window.onload = function () {
-      let mbrProfit = $('#mbr-profit') 
-      mbrProfit.focusout(evt => {
-        let parsedInput = validateFloat(mbrProfit.val())
-        mbrProfit.val(floatToString(parsedInput, 2))
-        ipcRenderer.send('set-mbr-profit', parsedInput)
-        lsMbr()
-      })
-      mbrProfit.keypress(evt => {
-        if (evt.which == 13)
-          mbrProfit.blur()
-      })
-
       $('#working-date-month').change(setWorkingDate)
       $('#working-date-year').change(setWorkingDate)
 
@@ -191,13 +179,29 @@
         <th>Join Date</th>
         <th>Package</th>
         <th>Remark</th>
-        <th><input id='mbr-profit' placeholder="Profit" type="number" onfocus="this.select();">%</th>
+        <th><input id="mbr-profit" placeholder="Profit" type="number">%</th>
       </tr>
     </thead>
     <tbody id="mbr-ls-table-body">
       <!-- INSERT MBR LS HERE -->
     </tbody>
   </table>
+  <script>
+    let mbrProfit = $('#mbr-profit') 
+    mbrProfit.focusout(evt => {
+      let parsedInput = toFloat(mbrProfit.val(), 2)
+      mbrProfit.val(floatToString(parsedInput, 2))
+      ipcRenderer.send('set-mbr-profit', parsedInput)
+      lsMbr()
+    })
+    mbrProfit.keypress(evt => {
+      if (evt.which == 13)
+        mbrProfit.blur()
+    })
+    mbrProfit.focus(function(){
+      this.select()
+    })
+  </script>
 </body>
 
 </html>
