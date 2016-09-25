@@ -109,3 +109,7 @@ ipcMain.on('set-mbr-profit', (evt, profit) => {
 })
 
 ipcMain.on('get-mbr-profit', getProfit)
+
+ipcMain.on('ls-rebate', (evt, _id) => {
+  
+})

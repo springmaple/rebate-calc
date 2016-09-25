@@ -30,32 +30,35 @@
 
       for (let j=0; j<30; j++) {
         let rebateMbrDatesId = `input:checkbox[name="rebate-mbr-date-${i}-${j}"]`
-        let rebateMbrNameId = `rebate-mbr-package-${i}-${j}`
-        let rebateMbrPackageId = `rebate-mbr-package-${i}-${j}`
+        // let rebateMbrNameId = `#rebate-mbr-name-${i}-${j}`
+        let rebateMbrPackageId = `#rebate-mbr-package-${i}-${j}`
 
-        let mbrPackage = toFloat($(rebateMbrPackageId), 2)
+        let mbrPackage = toFloat($(rebateMbrPackageId).val(), 2)
         let mbrNameDate = null
         let rebateMbrDates = $(rebateMbrDatesId)
         for (let k=0; k<3; k++) {
           let e = $(rebateMbrDates[k])
-          if (e.hasClass('active')) {
+          if (e.parent().hasClass('active')) {
             mbrNameDate = e.attr('val')
             break
           }
         }
 
         if (!isNaN(mbrPackage) && mbrNameDate !== null) {
-          let key = parseInt(mbrNameDate) 
-          data[key] += mbrPackage
-          dataCount[key] += 1
+          let key = parseInt(mbrNameDate)
+          data[key] = parseFloat(data[key]) + parseFloat(mbrPackage)
+          dataCount[key] = dataCount[key] + 1
+          $(`#rebate-mbr-${i}-${j}`).removeClass('rebate-panel-fade')
+        } else {
+          $(`#rebate-mbr-${i}-${j}`).addClass('rebate-panel-fade')
         }
       }
 
-      for (key in data) {
-        let mbrPackage = data[key]
-        $(`rebate-subtotal-${i}-${key}-count`).html(dataCount[key])
-        $(`rebate-subtotal-${i}-${key}-total`).html(floatToString(mbrPackage))
-        $(`rebate-subtotal-${i}-${key}`).html(floatToString(mbrPackage * i / 100, 2))
+      for (k in data) {
+        let mbrPackage = data[k]
+        $(`#rebate-subtotal-${i}-${k}-count`).html(dataCount[k])
+        $(`#rebate-subtotal-${i}-${k}-total`).html(floatToString(mbrPackage))
+        $(`#rebate-subtotal-${i}-${k}`).html(floatToString(mbrPackage * i / 100, 2))
       }
     }
 
@@ -64,8 +67,14 @@
         $(`#${map[key]}`).html(mbr[key])
     })
 
+    ipcRenderer.on('ls-rebate', (evt, rebates) => {
+      for (let i=1; i<=3; i++)
+        updSubtotal(i)
+    })
+
     window.onload = function () {
       ipcRenderer.send('get-mbr', _id)
+      ipcRenderer.send('ls-rebate', _id)
     }
   </script>
 
@@ -173,7 +182,7 @@
         let rebateMbrPackageId = `rebate-mbr-package-${i}-${j}`
         rebateMbrHtml += `
           <li>
-            <ul class="list-group">
+            <ul class="list-group rebate-panel-fade" id="rebate-mbr-${i}-${j}">
               <li class="list-group-item">
                 <div class="btn-group" data-toggle="buttons">
                   <label class="btn btn-default">
