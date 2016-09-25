@@ -2,7 +2,7 @@
 <html>
 
 <head>
-  <title>Member</title>
+  <title>Calculator</title>
   <link rel="stylesheet" href="../css/bootstrap.css">
   <link rel="stylesheet" href="../css/bootstrap-theme.css">
   <link rel="stylesheet" href="../css/mbr-rebate.css">
@@ -23,34 +23,58 @@
       mbrPackage: 'mbr-package'
     }
 
-    function updSubtotal(i) {
+    function selectMbrDate(i, j, selectedVal) {
+      let rebateMbrDatesId = `input:checkbox[name="rebate-mbr-date-${i}-${j}"]`
+      let rebateMbrDates = $(rebateMbrDatesId)
+      for (let i=0; i<3; i++) {
+        let e = $(rebateMbrDates[i])
+        if (selectedVal == e.attr('val'))
+          e.parent().toggleClass('active')
+        else
+          e.parent().removeClass('active')
+      }
+    }
+
+    function updSubtotal(i, save) {
       i = parseInt(i)
       let data = {10: 0, 20: 0, 30: 0}   
       let dataCount = {10: 0, 20: 0, 30: 0}
 
+      let rebateMbrLs = []
+      let rebateMbrSave = {mbr_id: _id, mbrPct: i, mbr: rebateMbrLs}
+      let rebatePackageLs = []
+      let rebatePackageSave = {mbr_id: _id, mbrPct: i, mbrPackage: rebatePackageLs}
+
       for (let j=0; j<30; j++) {
         let rebateMbrDatesId = `input:checkbox[name="rebate-mbr-date-${i}-${j}"]`
-        // let rebateMbrNameId = `#rebate-mbr-name-${i}-${j}`
+        let rebateMbrNameId = `#rebate-mbr-name-${i}-${j}`
         let rebateMbrPackageId = `#rebate-mbr-package-${i}-${j}`
 
         let mbrPackage = toFloat($(rebateMbrPackageId).val(), 2)
-        let mbrNameDate = null
+        let mbrDate = null
         let rebateMbrDates = $(rebateMbrDatesId)
         for (let k=0; k<3; k++) {
           let e = $(rebateMbrDates[k])
           if (e.parent().hasClass('active')) {
-            mbrNameDate = e.attr('val')
+            mbrDate = e.attr('val')
             break
           }
         }
 
-        if (!isNaN(mbrPackage) && mbrNameDate !== null) {
-          let key = parseInt(mbrNameDate)
+        let e = $(`#rebate-mbr-${i}-${j}`)
+        e.removeClass('rebate-panel-active-10 rebate-panel-active-20 rebate-panel-active-30')
+        if (!isNaN(mbrPackage) && mbrDate !== null) {
+          e.addClass(`rebate-panel-active-${mbrDate}`)
+          let key = parseInt(mbrDate)
           data[key] = parseFloat(data[key]) + parseFloat(mbrPackage)
           dataCount[key] = dataCount[key] + 1
-          $(`#rebate-mbr-${i}-${j}`).removeClass('rebate-panel-fade')
-        } else {
-          $(`#rebate-mbr-${i}-${j}`).addClass('rebate-panel-fade')
+        }
+
+        if (save) {
+          rebateMbrLs.push({mbrName: $(rebateMbrNameId).val(), mbrDate: mbrDate})
+          if (isNaN(mbrPackage))
+            mbrPackage = null
+          rebatePackageLs.push(mbrPackage)
         }
       }
 
@@ -60,6 +84,26 @@
         $(`#rebate-subtotal-${i}-${k}-total`).html(floatToString(mbrPackage))
         $(`#rebate-subtotal-${i}-${k}`).html(floatToString(mbrPackage * i / 100, 2))
       }
+
+      if (save) {
+        ipcRenderer.send('set-rebate-mbr', rebateMbrSave)
+        ipcRenderer.send('set-rebate-package', rebatePackageSave)
+      }
+
+      updTotal()
+    }
+
+    function updTotal() {
+      for (let k=10; k<=30; k+=10) {
+        let count = 0
+        let total = 0
+        for (let i=1; i<=3; i++) {
+          count += parseInt($(`#rebate-subtotal-${i}-${k}-count`).html())
+          total += parseFloat($(`#rebate-subtotal-${i}-${k}`).html())
+        }
+        $(`#rebate-total-${k}-count`).html(count)
+        $(`#rebate-total-${k}`).html(floatToString(total, 2))
+      }
     }
 
     ipcRenderer.on('get-mbr', (evt, mbr) => {
@@ -67,9 +111,28 @@
         $(`#${map[key]}`).html(mbr[key])
     })
 
-    ipcRenderer.on('ls-rebate', (evt, rebates) => {
-      for (let i=1; i<=3; i++)
-        updSubtotal(i)
+    ipcRenderer.on('ls-rebate-mbr', (evt, rebateMbr) => {
+      let {mbr_id, mbrPct, mbr} = rebateMbr
+      let i = mbrPct
+      for (let j=0; j<30; j++) {
+        let mbrDate = mbr[j].mbrDate
+        if (mbrDate !== null)
+          selectMbrDate(i, j, mbrDate)
+        $(`#rebate-mbr-name-${i}-${j}`).val(mbr[j].mbrName)
+      }
+      updSubtotal(i, false)
+    })
+
+    ipcRenderer.on('ls-rebate-package', (evt, rebatePackage) => {
+      let {mbr_id, mbrPct, mbrPackage} = rebatePackage
+      let i = mbrPct
+      for (let j=0; j<30; j++)
+        $(`#rebate-mbr-package-${i}-${j}`).val(floatToString(mbrPackage[j], 2))
+      updSubtotal(i, false)
+    })
+
+    ipcRenderer.on('ls-rebate-package-no-data', (evt, i) => {
+      updSubtotal(i, false)
     })
 
     window.onload = function () {
@@ -100,7 +163,7 @@
       {label: 'Name', id: 'mbr-name'},
       {label: 'Email', id: 'mbr-email'},
       {label: 'Bank Name', id: 'mbr-bank-name'},
-      {label: 'Bank Acc', id: 'mbr-bank'},
+      {label: 'Bank Acc', id: 'mbr-bank-acc'},
       {label: 'Package', id: 'mbr-package'}
     ]
     let rebateMbrInfo = $('#rebate-mbr-info')
@@ -109,7 +172,7 @@
       <div class="form-group">
         <label class="control-label col-sm-2" for="${id}-lbl">${label}:</label>
           <div class="col-sm-10" id="${id}-lbl">
-            <div class="form-control no-input-box" id="${id}"><!-- INSERT MBR INFO --></div>
+            <div class="form-control no-input-box" id="${id}">Loading...<!-- INSERT MBR INFO --></div>
           </div>
       </div>`)
     }
@@ -139,28 +202,28 @@
                     <tr>
                       <th>
                         <span>10</span>
-                        <span id="rebate-subtotal-${i}-10-count" class="badge"><!-- DATA --></span>
+                        <span id="rebate-subtotal-${i}-10-count" class="label label-danger">0</span>
                       </th>
                       <th>
                         <span>20</span>
-                        <span id="rebate-subtotal-${i}-20-count" class="badge"><!-- DATA --></span>
+                        <span id="rebate-subtotal-${i}-20-count" class="label label-success">0</span>
                       </th>
                       <th>
                         <span>30</span>
-                        <span id="rebate-subtotal-${i}-30-count" class="badge"><!-- DATA --></span>
+                        <span id="rebate-subtotal-${i}-30-count" class="label label-primary">0</span>
                       </th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr>
-                      <td><span id="rebate-subtotal-${i}-10-total"><!-- DATA --></span></td>
-                      <td><span id="rebate-subtotal-${i}-20-total"><!-- DATA --></span></td>
-                      <td><span id="rebate-subtotal-${i}-30-total"><!-- DATA --></span></td>
+                      <td><span id="rebate-subtotal-${i}-10-total">0</span></td>
+                      <td><span id="rebate-subtotal-${i}-20-total">0</span></td>
+                      <td><span id="rebate-subtotal-${i}-30-total">0</span></td>
                     </tr>
                     <tr>
-                      <td><span id="rebate-subtotal-${i}-10"><!-- DATA --></span></td>
-                      <td><span id="rebate-subtotal-${i}-20"><!-- DATA --></span></td>
-                      <td><span id="rebate-subtotal-${i}-30"><!-- DATA --></span></td>
+                      <td><span id="rebate-subtotal-${i}-10">0</span></td>
+                      <td><span id="rebate-subtotal-${i}-20">0</span></td>
+                      <td><span id="rebate-subtotal-${i}-30">0</span></td>
                     </tr>
                   </tbody>
                 </table>
@@ -168,10 +231,48 @@
             </div>
           </div>
         </div>`)
-      $(`#${rebatePanelHeadId}`).dblclick(rebatePanelBodyId, function(evt) {
+      
+      $(`#${rebatePanelHeadId}`).click(rebatePanelBodyId, function(evt) { //can use dblclick 
         $(`#${evt.data}`).toggleClass('wrap no-wrap')
       })
     }
+
+    rebatePanels.append(`
+      <div class="panel panel-default rebate-panel-total-panel">
+        <div class="panel-body">
+          <div class="row">
+            <div class="col-md-9 rebate-panel-body-col"></div>
+            <div class="col-md-3 rebate-panel-body-col">
+              <table class="table table-bordered rebate-panel-total">
+                <thead>
+                  <tr>
+                    <th>
+                      <span>10</span>
+                      <span id="rebate-total-10-count" class="label label-danger">0</span>
+                    </th>
+                    <th>
+                      <span>20</span>
+                      <span id="rebate-total-20-count" class="label label-success">0</span>
+                    </th>
+                    <th>
+                      <span>30</span>
+                      <span id="rebate-total-30-count" class="label label-primary">0</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span id="rebate-total-10">0</span></td>
+                    <td><span id="rebate-total-20">0</span></td>
+                    <td><span id="rebate-total-30">0</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>`)
+
 
     for (let i=3; i>=1; i--) {
       let rebatePanelBody = $(`#rebate-panel-body-${i}`)
@@ -182,7 +283,7 @@
         let rebateMbrPackageId = `rebate-mbr-package-${i}-${j}`
         rebateMbrHtml += `
           <li>
-            <ul class="list-group rebate-panel-fade" id="rebate-mbr-${i}-${j}">
+            <ul class="list-group" id="rebate-mbr-${i}-${j}">
               <li class="list-group-item">
                 <div class="btn-group" data-toggle="buttons">
                   <label class="btn btn-default">
@@ -217,7 +318,7 @@
           let e = $(this)
           let inp = toFloat(e.val(), 2)
           e.val(floatToString(inp, 2))
-          updSubtotal(e.attr('i'))
+          updSubtotal(e.attr('i'), true)
         })
         rebateMbrPackage.keypress(function(evt) {
           if (evt.which == 13)
@@ -227,18 +328,20 @@
           this.select()
         })
 
+        let rebateMbrName = $(`#rebate-mbr-name-${i}-${j}`) 
+        rebateMbrName.focusout(function(evt) {
+          updSubtotal(rebateMbrName.attr('i'), true)
+        })
+        rebateMbrName.keypress(function(evt) {
+          if (evt.which == 13)
+            $(this).blur()
+        })
+         
         let rebateMbrDatesId = `input:checkbox[name="rebate-mbr-date-${i}-${j}"]`
-        $(rebateMbrDatesId).change({rebateMbrDatesId: rebateMbrDatesId}, function(evt) {
+        $(rebateMbrDatesId).change({i: i, j: j}, function(evt) {
           let selectedVal = $(this).attr('val')
-          let rebateMbrDates = $(evt.data.rebateMbrDatesId)
-          for (let i=0; i<3; i++) {
-            let e = $(rebateMbrDates[i])
-            if (selectedVal == e.attr('val'))
-              e.parent().toggleClass('active')
-            else
-              e.parent().removeClass('active')
-          }
-          updSubtotal($(this).attr('i'))
+          selectMbrDate(evt.data.i, evt.data.j, selectedVal)
+          updSubtotal($(this).attr('i'), true)
         })
       }
     }

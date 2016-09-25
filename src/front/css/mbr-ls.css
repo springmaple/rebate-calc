@@ -10,7 +10,12 @@ input[type="number"]::-webkit-inner-spin-button {
     margin: 0;
 }
 
+.working-date-select-ul li a {
+  cursor: default;
+}
+
 .working-date-select {
+  cursor: pointer;
   margin: 0;
   padding: 0;
   border: none;
@@ -24,4 +29,12 @@ input[type="number"]::-webkit-inner-spin-button {
   text-align: center;
   border:0;
   border-bottom: 2px dotted;
+}
+
+@media print
+{    
+    .no-print, .no-print *
+    {
+        display: none !important;
+    }
 }

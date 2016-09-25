@@ -2,7 +2,7 @@
 <html>
 
 <head>
-  <title>Rebate Calculator</title>
+  <title>Calculator</title>
 
   <link rel="stylesheet" href="../css/bootstrap.css">
   <link rel="stylesheet" href="../css/bootstrap-theme.css">
@@ -42,7 +42,7 @@
     }
 
     function showMbrInfo(_id) {  // show create new member form if _id is null.
-      ipcRenderer.send('show-mbr-info', _id)
+      ipcRenderer.send('show-mbr-page', {_id: _id, name: 'mbr-info'})
     }
 
     function selectDay(d) {
@@ -95,7 +95,7 @@
 
         $('.mbr-tr').dblclick(function() {
           let _id = $(this).attr('mbrId')
-          ipcRenderer.send('show-mbr-rebate', _id)
+          ipcRenderer.send('show-mbr-page', {_id: _id, name: 'mbr-rebate'})
         })
       }
     })
@@ -125,6 +125,11 @@
 
       getWorkingDate()
       getMbrProfit()
+
+      $("body").keypress(function(event) {
+        if (event.keyCode == 14)  // ctrl + n
+          showMbrInfo(null)   
+      });
     }
   </script>
 
@@ -134,14 +139,14 @@
   <nav class="navbar navbar-default">
     <div class="container-fluid">
       <div class="navbar-header">
-        <span class="navbar-brand">Working Date</span>
+        <span class="navbar-brand">Select Date</span>
       </div>
       <ul class="nav navbar-nav" id="working-date-day">
         <li><a href="javascript:selectDay(0)">10</a></li>
         <li><a href="javascript:selectDay(1)">20</a></li>
         <li><a href="javascript:selectDay(2)">30</a></li>
       </ul>
-      <ul class="nav navbar-nav navbar-right">
+      <ul class="nav navbar-nav navbar-right working-date-select-ul">
         <li><a href="javascript:void(0)"><select class="working-date-select" id="working-date-month"><!-- INSERT MONTHS HERE --></select></a></li>
         <li><a href="javascript:void(0)"><select class="working-date-select" id="working-date-year"><!-- INSERT YEARS HERE --></select></a></li>
       </ul>
@@ -161,9 +166,9 @@
     $('#working-date-year').html(cnt)
   </script>
 
-  <ol class="breadcrumb">
+  <ol class="breadcrumb no-print">
     <li><a href="javascript:showMbrInfo(null)">New Member</a></li>
-    <li><a href="javascript:showMbrInfo(null)">Print</a></li>
+    <li><a href="javascript:window.print()">Print</a></li>
   </ol>
 
   <table class="table table-condensed table-hover">

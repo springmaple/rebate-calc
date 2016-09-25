@@ -2,7 +2,7 @@
 <html>
 
 <head>
-  <title>Member</title>
+  <title>Calculator</title>
 
   <link rel="stylesheet" href="../css/bootstrap.css">
   <link rel="stylesheet" href="../css/bootstrap-theme.css">
@@ -30,7 +30,6 @@
     const _id = getParamByName('_id', window.location.href)
     
     var _mbr = null
-    var cnlUpdMbr = window.close
 
     function rmErr() {
       $('#form-error').html('')
@@ -57,7 +56,7 @@
       for (let key in map)
         mbrToIns[key] = $(`#${map[key]}`).val()
       ipcRenderer.send('new-mbr', mbrToIns)
-      cnlUpdMbr()
+      window.close()
     }
 
     function updMbr() {
@@ -74,7 +73,18 @@
       if (!$.isEmptyObject(mbrToUpd))
         ipcRenderer.send('upd-mbr', {_id: _id, mbr: mbrToUpd})
 
-      cnlUpdMbr()
+      window.close()
+    }
+
+    function delMbr() {
+      if (confirm("Press OK to confirm delete.")) {
+        ipcRenderer.send('del-mbr', _id)
+        window.close()
+      }
+    }
+
+    function cnlUpdMbr() {
+      window.close()
     }
 
     ipcRenderer.on('get-mbr', (evt, mbr) => {
@@ -84,6 +94,7 @@
     })
 
     window.onload = function () {
+      return
       if (_id)
         ipcRenderer.send('get-mbr', _id)
     }
@@ -138,8 +149,16 @@
       let btnHtml = null
       if (_id) {
         ipcRenderer.send('get-mbr', _id)
-        btnHtml = `<button onclick="updMbr()" class="btn btn-primary">Update</button>
-                   <button onclick="cnlUpdMbr()" class="btn btn-default">Cancel</button>`
+        btnHtml = `
+        <div>
+          <span>
+            <button onclick="updMbr()" class="btn btn-primary">Update</button>
+            <button onclick="cnlUpdMbr()" class="btn btn-default">Cancel</button>
+          </span>
+          <span style="float: right">
+            <button onclick="delMbr()" class="btn btn-danger">Delete</button>
+          </span>
+        </div>`
       } else
         btnHtml = `<button onclick="newMbr()" class="btn btn-primary">Create Member</button>`
 
