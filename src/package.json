@@ -1,11 +1,11 @@
 {
-  "name": "Calculator",
-  "version": "1.0.0",
-  "description": "Calculator",
+  "name": "rebate-calc",
+  "version": "0.1.0",
+  "description": "Rebate Calculator",
   "main": "app.js",
   "author": "SpringMaple",
   "dependencies": {
-    "electron-prebuilt": "^1.4.0",
+    "electron-prebuilt": "^1.4.1",
     "nedb": "^1.8.0"
   }
 }

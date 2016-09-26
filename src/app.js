@@ -2,8 +2,10 @@ const {app, BrowserWindow, ipcMain} = require('electron')
 const Datastore = require('nedb')
 const Util = require('./lib/util.js')
 const htmlPath = `file://${__dirname}/front/html`
+const {version} = require('./package.json')
+const appName = `Calc v${version}`
 
-var mbrDb = new Datastore({ filename: `${__dirname}\\app.db`, autoload: true })
+var mbrDb = new Datastore({ filename: `${__dirname}\\..\\..\\calc.dat`, autoload: true })
 var workingDate = Util.getNearestDate()
 var win = null
 var popWin = null
@@ -37,10 +39,11 @@ app.on('browser-window-created', (e, window) => {
 })
 
 app.on('ready', () => {
-  win = new BrowserWindow({minWidth: 400, minHeight: 300, show: false})
+  win = new BrowserWindow({minWidth: 400, minHeight: 300, show: false, title: appName})
   win.maximize()
   win.on('closed', () => {
     win = null
+    app.quit()
   })
   win.loadURL(`${htmlPath}/mbr-ls.html`)
   win.show()
@@ -48,6 +51,7 @@ app.on('ready', () => {
 
 ipcMain.on('show-mbr-page', (evt, page) => {
   popWin = new BrowserWindow({
+    title: appName,
     minWidth : 400,
     minHeight: 300, 
     show: false,

@@ -1,2 +1,2 @@
 del dist /F /Q
-electron-packager src RebateCalc --platform=win32 --arch=ia32 --asar --out=dist --tmpdir=false
+electron-packager src calc --platform=win32 --arch=ia32 --out=dist --tmpdir=false --asar
