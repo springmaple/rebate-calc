@@ -89,10 +89,7 @@
         ipcRenderer.send('set-rebate-package', rebatePackageSave)
       }
 
-      updTotal()
-    }
-
-    function updTotal() {
+      // update total
       for (let k=10; k<=30; k+=10) {
         let count = 0
         let total = 0
@@ -103,6 +100,7 @@
         $(`#rebate-total-${k}-count`).html(count)
         $(`#rebate-total-${k}`).html(floatToString(total, 2))
       }
+
     }
 
     ipcRenderer.on('get-mbr', (evt, mbr) => {

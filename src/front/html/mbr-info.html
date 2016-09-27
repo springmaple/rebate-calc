@@ -13,6 +13,7 @@
   <script>
     const {ipcRenderer} = require('electron')
     const {getParamByName, floatToString} = require('./../../lib/util.js')
+    const _id = getParamByName('_id', window.location.href)
     const map = {
       mbrName: 'mbr-name',
       mbrId: 'mbr-id',
@@ -25,7 +26,6 @@
       mbrPackage: 'mbr-package',
       mbrRemark: 'mbr-remark'
     }
-    const _id = getParamByName('_id', window.location.href)
     
     var _mbr = null
 
@@ -92,7 +92,6 @@
     })
 
     window.onload = function () {
-      return
       if (_id)
         ipcRenderer.send('get-mbr', _id)
     }
@@ -101,7 +100,9 @@
 </head>
 
 <body>
-  <div id="mbr-navibar"><!-- INSERT NAVI BAR --></div>
+  <div id="mbr-navibar">
+    <!-- INSERT NAVI BAR -->
+  </div>
   <script>
     if (_id)
       $('#mbr-navibar').html(`
@@ -110,10 +111,14 @@
           <li><a href="mbr-rebate.html?_id=${_id}">Calculator</a></li>
         </ul>`)
   </script>
-  
+
   <div class="container">
-    <div id="form-error"><!-- INSERT ERROR HERE --></div>
-    <form class="form-horizontal" onsubmit="return false" id="rebate-mbr-info"><!-- INSERT FORM CONTROLS --></form>
+    <div id="form-error">
+      <!-- INSERT ERROR HERE -->
+    </div>
+    <form class="form-horizontal" onsubmit="return false" id="rebate-mbr-info">
+      <!-- INSERT FORM CONTROLS -->
+    </form>
     <script>
       let mbrInfoElementMap = [
         {label: 'Name', id: 'mbr-name', type: 'text', ph: 'Enter name'},
@@ -146,7 +151,6 @@
 
       let btnHtml = null
       if (_id) {
-        ipcRenderer.send('get-mbr', _id)
         btnHtml = `
         <div>
           <span>
