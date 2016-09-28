@@ -2,8 +2,6 @@ const {app, BrowserWindow, ipcMain} = require('electron')
 const Datastore = require('nedb')
 const Util = require('./lib/util.js')
 const htmlPath = `file://${__dirname}/front/html`
-const {version} = require('./package.json')
-const appName = `Calc v${version}`
 
 var mbrDb = new Datastore({ filename: `${__dirname}\\..\\..\\calc.dat`, autoload: true })
 var workingDate = Util.getNearestDate()
@@ -34,12 +32,56 @@ function getProfit() {
   })
 }
 
+function checkHasMbr(_id) {
+  let query = { _doc: 'rebate-package', mbr_id: _id, _date: workingDate }
+  let rebatePackageActive = { 1: [], 2: [], 3: [] }
+  mbrDb.find(query, (err, rebatePackages) => {
+    let hasRebatePackage = false
+    for (rebatePackage of rebatePackages) {
+      let rpArray = rebatePackageActive[rebatePackage.mbrPct]
+      for (let i = 0; i < rebatePackage.mbrPackage.length; i++) {
+        let mbrPackageVal = rebatePackage.mbrPackage[i]
+        let val = parseFloat(mbrPackageVal)
+        if (!isNaN(val) && val > 0) {
+          rpArray.push(i)
+          hasRebatePackage = true
+        }
+      }
+    }
+
+    if (hasRebatePackage) {
+      query = { _doc: 'rebate-mbr', mbr_id: _id }
+      mbrDb.find(query, (err, rebateMbrs) => {
+        let rebateMbrActive = { 1: null, 2: null, 3: null }
+        let log = false
+        for (rebateMbr of rebateMbrs) {
+          log = true
+          rebateMbrActive[rebateMbr.mbrPct] = rebateMbr.mbr
+        }
+
+        for (let z = 1; z <= 3; z++) {
+          let rmActive = rebateMbrActive[z]
+          if (!rmActive)
+            continue
+          for (j of rebatePackageActive[z])
+            if (rmActive[j].mbrDate !== null) {
+              win.webContents.send('check-has-mbr', { mbr_id: _id, hasMbr: true })
+              return
+            }
+        }
+        win.webContents.send('check-has-mbr', { mbr_id: _id, hasMbr: false })
+      })
+    } else
+      win.webContents.send('check-has-mbr', { mbr_id: _id, hasMbr: false })
+  })
+}
+
 app.on('browser-window-created', (e, window) => {
   window.setMenu(null)
 })
 
 app.on('ready', () => {
-  win = new BrowserWindow({minWidth: 400, minHeight: 300, show: false, title: appName})
+  win = new BrowserWindow({ minWidth: 400, minHeight: 300, show: false, title: `Calc - ${workingDate}` })
   win.maximize()
   win.on('closed', () => {
     win = null
@@ -51,9 +93,9 @@ app.on('ready', () => {
 
 ipcMain.on('show-mbr-page', (evt, page) => {
   popWin = new BrowserWindow({
-    title: appName,
-    minWidth : 400,
-    minHeight: 300, 
+    title: 'Member',
+    minWidth: 400,
+    minHeight: 300,
     show: false,
     parent: win,
     modal: true,
@@ -95,7 +137,7 @@ ipcMain.on('upd-mbr', (evt, obj) => {
 })
 
 ipcMain.on('del-mbr', (evt, _id) => {
-  mbrDb.update({ _id: _id }, { $set: {_endDate: workingDate} }, {}, onMbrChanged)
+  mbrDb.update({ _id: _id }, { $set: { _endDate: workingDate } }, {}, onMbrChanged)
 })
 
 ipcMain.on('get-mbr', (evt, _id) => {
@@ -127,7 +169,11 @@ ipcMain.on('set-rebate-mbr', (evt, rebateMbr) => {
   mbrDb.update(query, { $set: { mbr: mbr } }, {},
     (err, numAff) => {
       if (!numAff)
-        mbrDb.insert({ _doc: _doc, mbr_id: mbr_id, mbrPct: mbrPct, mbr: mbr })
+        mbrDb.insert({ _doc: _doc, mbr_id: mbr_id, mbrPct: mbrPct, mbr: mbr }, (err) => {
+          checkHasMbr(mbr_id)
+        })
+      else
+        checkHasMbr(mbr_id)
     })
 })
 
@@ -139,7 +185,11 @@ ipcMain.on('set-rebate-package', (evt, rebatePackage) => {
   mbrDb.update(query, { $set: { mbrPackage: mbrPackage } }, {},
     (err, numAff) => {
       if (!numAff)
-        mbrDb.insert({ _doc: _doc, _date: workingDate, mbr_id: mbr_id, mbrPct: mbrPct, mbrPackage: mbrPackage })
+        mbrDb.insert({ _doc: _doc, _date: workingDate, mbr_id: mbr_id, mbrPct: mbrPct, mbrPackage: mbrPackage }, () => {
+          checkHasMbr(mbr_id)
+        })
+      else
+        checkHasMbr(mbr_id)
     })
 })
 
@@ -159,4 +209,8 @@ ipcMain.on('ls-rebate', (evt, _id) => {
         evt.sender.send('ls-rebate-package-no-data', mbrPct)
     })
   }
+})
+
+ipcMain.on('check-has-mbr', (evt, _id) => {
+  checkHasMbr(_id)
 })

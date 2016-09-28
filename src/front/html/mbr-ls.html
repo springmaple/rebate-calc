@@ -13,6 +13,7 @@
   <script>
     const {ipcRenderer} = require('electron')
     const {toFloat, floatToString, joinDate} = require('./../../lib/util.js')
+    const {version} = require('./../../package.json')
 
     function lsMbr() {
       ipcRenderer.send('ls-mbr', null)
@@ -27,7 +28,9 @@
         if (e.hasClass('active'))
           d = (idx + 1) * 10
       })
-      ipcRenderer.send('set-working-date', joinDate(y, m, d))
+      let date = joinDate(y, m, d)
+      ipcRenderer.send('set-working-date', date)
+      document.title = `Calc - ${date}`
     }
 
     function getWorkingDate() {
@@ -57,24 +60,39 @@
     }
 
     ipcRenderer.on('ls-mbr', (evt, mbrs) => {
-      mbrsLen = mbrs.length
-      if (!mbrsLen)
-        $('#mbr-ls-table-body').html('<tr><td colspan="11">No records.</td></tr>')
+      $('#mbr-total-has-mbr').html('0')
 
-      else {
+      mbrsLen = mbrs.length
+      let mbrTotalPackage = $('#mbr-total-package')
+      let mbrLsTableBody = $('#mbr-ls-table-body')
+
+      if (!mbrsLen) {
+        mbrLsTableBody.html('<tr><td colspan="11">No records.</td></tr>')
+        mbrTotalPackage.html('0')
+
+      } else {
         let profitPct = toFloat($('#mbr-profit').val(), 2)
-        let body = ''
+        let totalPackage = 0
+
+        mbrTotalPackage.html('Calculating...')
+        mbrLsTableBody.html('')
 
         for (mbr of mbrs) {
-          let profit = toFloat(toFloat(mbr.mbrPackage, 2) * profitPct / 100, 2)
-          if (isNaN(profit))
-            profit = 'N/A'
-          else
-            profit = floatToString(profit, 2)
+          let package = toFloat(mbr.mbrPackage, 2)
+          let profit = 'N/A'
+          if (!isNaN(package)) {
+            totalPackage += package
+            let profit_ = toFloat(package * profitPct / 100, 2)
+            if (!isNaN(profit_))
+              profit = floatToString(profit_, 2)
+          }
 
-          body += `
-            <tr class="mbr-tr" mbrId="${mbr._id}">
-              <td><a class="no-blue-text" href="javascript:showMbrInfo('${mbr._id}')">${mbr.mbrName}</a></td>
+          let mbr_id = mbr._id
+
+          mbrLsTableBody.append(`
+            <tr class="mbr-tr" mbrId="${mbr_id}">
+              <td><span id="mbr-has-mbr-${mbr_id}"></span></td>
+              <td><a class="no-blue-text" href="javascript:showMbrInfo('${mbr_id}')">${mbr.mbrName}</a></td>
               <td>${mbr.mbrId}</td>
               <td>${mbr.mbrHp}</td>
               <td>${mbr.mbrIc}</td>
@@ -85,15 +103,34 @@
               <td>${floatToString(mbr.mbrPackage, 2)}</td>
               <td>${mbr.mbrRemark}</td>
               <td>${profit}</td>
-            </tr>`
+            </tr>`)
+
+          ipcRenderer.send('check-has-mbr', mbr_id)
         }
 
-        $('#mbr-ls-table-body').html(body)
+        mbrTotalPackage.html(floatToString(totalPackage))
 
         $('.mbr-tr').dblclick(function() {
           let _id = $(this).attr('mbrId')
           ipcRenderer.send('show-mbr-page', {_id: _id, name: 'mbr-rebate'})
         })
+      }
+    })
+
+    ipcRenderer.on('check-has-mbr', (evt, hasMbrData) => {
+      let {mbr_id, hasMbr} = hasMbrData
+      let e = $(`#mbr-has-mbr-${mbr_id}`)
+      let total = $('#mbr-total-has-mbr')
+      if (hasMbr) {
+        if (!e.hasClass('glyphicon')) {
+          e.addClass('glyphicon glyphicon-user')
+          total.html(parseInt(total.html()) + 1)
+        }
+      } else {
+        if (e.hasClass('glyphicon')) {
+          e.removeClass('glyphicon glyphicon-user')
+          total.html(parseInt(total.html()) - 1)
+        }
       }
     })
 
@@ -164,13 +201,24 @@
   </script>
 
   <ol class="breadcrumb no-print">
+    <li id="mbr-app-version"></li>
     <li><a href="javascript:showMbrInfo(null)">New Member</a></li>
     <li><a href="javascript:window.print()">Print</a></li>
   </ol>
+  <script>
+    $('#mbr-app-version').html(`v ${version}`)
+  </script>
 
+  <div class="mbr-ls-table-title">Name List</div>
+  <div class="row">
+      <div class="col-md-6"></div>
+      <div class="col-md-3 text-right"><span class="glyphicon glyphicon-user"></span><span id="mbr-total-has-mbr">0</span></div>
+      <div class="col-md-3 text-right"><span>Package Total:</span><span id="mbr-total-package">0</span></div>
+  </div>
   <table class="table table-condensed table-hover">
     <thead>
       <tr>
+        <th></th>
         <th>Name</th>
         <th>ID</th>
         <th>HP No</th>
@@ -193,7 +241,7 @@
     mbrProfit.focusout(evt => {
       let parsedInput = toFloat(mbrProfit.val(), 2)
       mbrProfit.val(floatToString(parsedInput, 2))
-      ipcRenderer.send('set-mbr-profit', parsedInput)
+      ipcRenderer.send('set-mbr-profit', isNaN(parsedInput)?null:parsedInput)
       lsMbr()
     })
     mbrProfit.keypress(evt => {

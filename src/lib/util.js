@@ -1,3 +1,7 @@
+function toFloat(val, precision) {
+  return parseFloat(parseFloat(val).toFixed(precision))
+}
+
 module.exports = {
 
   getNearestDate: function() {
@@ -37,15 +41,15 @@ module.exports = {
     return decodeURIComponent(results[2].replace(/\+/g, " "));
   },
 
-  toFloat: function(val, precision) {
-    return parseFloat(val).toFixed(precision)
-  },
+  toFloat: toFloat,
 
   floatToString: function(val, precision) {
     val = toFloat(val, 2)
     if (isNaN(val))
       return ''
-    return val.toString()
+    if (val == 0)
+      return '0'
+    return val.toFixed(2)
   },
 
   validateFloat: function(val, min, max) {

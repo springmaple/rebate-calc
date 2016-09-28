@@ -31,10 +31,24 @@ input[type="number"]::-webkit-inner-spin-button {
   border-bottom: 2px dotted;
 }
 
+.mbr-ls-table-title {
+  display: none;
+}
+
+#mbr-total-has-mbr {
+  display: inline-block;
+  min-width: 50px;
+}
+
+#mbr-total-package {
+  display: inline-block;
+  min-width: 80px;
+}
+
 @media print
 {    
     .no-print, .no-print * {
-      display: none !important;
+      display: none;
     }
 
     .mbr-profit {
@@ -47,5 +61,11 @@ input[type="number"]::-webkit-inner-spin-button {
 
     .no-blue-text {
       color: black;
+    }
+
+    .mbr-ls-table-title {
+      display: block;
+      text-align: center;
+      font-size: 17pt;
     }
 }
