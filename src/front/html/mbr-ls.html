@@ -4,16 +4,21 @@
 <head>
   <link rel="stylesheet" href="../css/bootstrap.css">
   <link rel="stylesheet" href="../css/bootstrap-theme.css">
+  <link rel="stylesheet" href="../css/awesomplete.css">
   <link rel="stylesheet" href="../css/mbr-ls.css">
 
   <script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
   <script src="../js/jquery-3.1.0.js"></script>
   <script src="../js/boostrap.js"></script>
+  <script src="../js/awesomplete.js"></script>
   <script>if (window.module) module = window.module;</script>
   <script>
     const {ipcRenderer} = require('electron')
     const {toFloat, floatToString, joinDate} = require('./../../lib/util.js')
     const {version} = require('./../../package.json')
+
+    var lastHighlightId = null
+    var mbrFindAwesomplete = null
 
     function lsMbr() {
       ipcRenderer.send('ls-mbr', null)
@@ -59,6 +64,28 @@
       setWorkingDate()
     }
 
+    function highlight(_id) {
+      $(`#mbr-ls-tr-${lastHighlightId}`).removeClass('mbr-tr-highlight')
+      lastHighlightId = _id
+      $(`#mbr-ls-tr-${lastHighlightId}`).addClass('mbr-tr-highlight')
+    }
+
+    function showPrint() {
+      $('#mbr-find').blur()
+      window.print()
+    }
+
+    function showFind() {
+      let e = $('#mbr-find') 
+      $('.mbr-find-div').css('display', 'inline-block')
+      e.focus()
+      e.select()
+    }
+
+    function hideFind() {
+      $('.mbr-find-div').css('display', 'none')
+    }
+
     ipcRenderer.on('ls-mbr', (evt, mbrs) => {
       $('#mbr-total-has-mbr').html('0')
 
@@ -69,10 +96,13 @@
       if (!mbrsLen) {
         mbrLsTableBody.html('<tr><td colspan="11">No records.</td></tr>')
         mbrTotalPackage.html('0')
+        lastHighlightId = null
+        mbrFindAwesomplete.list = []
 
       } else {
         let profitPct = toFloat($('#mbr-profit').val(), 2)
         let totalPackage = 0
+        let mbrFindLs = []
 
         mbrTotalPackage.html('Calculating...')
         mbrLsTableBody.html('')
@@ -90,7 +120,7 @@
           let mbr_id = mbr._id
 
           mbrLsTableBody.append(`
-            <tr class="mbr-tr" mbrId="${mbr_id}">
+            <tr class="mbr-tr" mbrId="${mbr_id}" id="mbr-ls-tr-${mbr_id}" onclick="highlight('${mbr_id}')">
               <td><span id="mbr-has-mbr-${mbr_id}"></span></td>
               <td><a class="no-blue-text" href="javascript:showMbrInfo('${mbr_id}')">${mbr.mbrName}</a></td>
               <td>${mbr.mbrId}</td>
@@ -106,6 +136,10 @@
             </tr>`)
 
           ipcRenderer.send('check-has-mbr', mbr_id)
+          let label = mbr.mbrName
+          if (mbr.mbrId)
+            label += ` (${mbr.mbrId})`
+          mbrFindLs.push(label)
         }
 
         mbrTotalPackage.html(floatToString(totalPackage))
@@ -114,6 +148,9 @@
           let _id = $(this).attr('mbrId')
           ipcRenderer.send('show-mbr-page', {_id: _id, name: 'mbr-rebate'})
         })
+
+        mbrFindAwesomplete.list = mbrFindLs 
+        highlight(lastHighlightId)
       }
     })
 
@@ -160,10 +197,24 @@
       getWorkingDate()
       getMbrProfit()
 
-      $("body").keypress(function(event) {
-        if (event.keyCode == 14)  // ctrl + n
-          showMbrInfo(null)   
+      $("body").keypress(function(evt) {
+        if (evt.which == 14)  // ctrl + n
+          showMbrInfo(null)
+        else if (evt.which == 6)  // ctrl + f
+          showFind()
+        else if (evt.which == 16)  // ctrl + p
+          showPrint()
       });
+
+      window.addEventListener("awesomplete-select", function(evt){
+        	evt.preventDefault()
+          $('#mbr-find').blur()
+          $('#mbr-find').val('')
+          console.log(evt.text.label)
+          console.log(evt.text.value)
+          console.log(evt.text.valueOf())
+          console.log(evt.text.toString())
+      }, false);
     }
   </script>
 
@@ -202,11 +253,28 @@
 
   <ol class="breadcrumb no-print">
     <li id="mbr-app-version"></li>
-    <li><a href="javascript:showMbrInfo(null)">New Member</a></li>
-    <li><a href="javascript:window.print()">Print</a></li>
+    <li><a href="javascript:showMbrInfo(null)" title="Ctrl+N">New Member</a></li>
+    <li><a href="javascript:showFind()" title="Ctrl+F">Find Member</a></li>
+    <li><a href="javascript:showPrint()" title="Ctrl+P">Print</a></li>
   </ol>
   <script>
     $('#mbr-app-version').html(`v ${version}`)
+  </script>
+
+  <div class="mbr-find-div"><input id="mbr-find" class="form-control" placeholder="Find by Name or ID" /></div>
+  <script>
+    let mbrFind = $('#mbr-find')
+    mbrFind.focusout(hideFind)
+    mbrFind.keyup(evt => {
+      if (evt.which == 27)
+        mbrFind.blur()
+    })
+
+    mbrFindAwesomplete = new Awesomplete(document.getElementById("mbr-find"), {
+      autoFirst: true,
+      minChars: 1,
+      list: []
+    })
   </script>
 
   <div class="mbr-ls-table-title">Name List</div>

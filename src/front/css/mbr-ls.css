@@ -31,8 +31,25 @@ input[type="number"]::-webkit-inner-spin-button {
   border-bottom: 2px dotted;
 }
 
+#mbr-find {
+  width: 300px;
+}
+
+.mbr-find-div {
+  display: none;
+  position: fixed;
+  z-index: 9999;
+  top: 150px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
 .mbr-ls-table-title {
   display: none;
+}
+
+.mbr-tr-highlight {
+  background-color: #ddd;
 }
 
 #mbr-total-has-mbr {
