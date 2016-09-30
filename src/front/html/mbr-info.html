@@ -34,14 +34,19 @@
     }
 
     function prevalidate() {
-      if ($('#mbr-name').val().length == 0) {
+      let mbrName = $('#mbr-name')
+      let mbrNameVal = mbrName.val().trim()
+      mbrName.val(mbrNameVal)
+      if (mbrNameVal.length == 0) {
         $('#form-error').html(`
           <div class="alert alert-danger">
             <a href="javascript:rmErr()" class="close" aria-label="close">&times;</a>
-            <strong>Validation!</strong> Fill in member name.
+            Member name must not be empty.
           </div>`)
+        mbrName.focus()
         return false
       }
+
       let mbrPackage = $('#mbr-package') 
       mbrPackage.val(floatToString(mbrPackage.val()))
       return true
@@ -75,7 +80,7 @@
     }
 
     function delMbr() {
-      if (confirm("Press OK to confirm delete.")) {
+      if (confirm("Press OK to confirm delete member.")) {
         ipcRenderer.send('del-mbr', _id)
         window.close()
       }
@@ -152,17 +157,20 @@
       let btnHtml = null
       if (_id) {
         btnHtml = `
-        <div>
-          <span>
-            <button onclick="updMbr()" class="btn btn-primary">Update</button>
-            <button onclick="cnlUpdMbr()" class="btn btn-default">Cancel</button>
-          </span>
-          <span style="float: right">
-            <button onclick="delMbr()" class="btn btn-danger">Delete</button>
-          </span>
-        </div>`
+          <div>
+            <span>
+              <button onclick="updMbr()" class="btn btn-primary">Update</button>
+              <button onclick="cnlUpdMbr()" class="btn btn-default">Cancel</button>
+            </span>
+            <span style="float: right">
+              <button onclick="delMbr()" class="btn btn-danger">Delete</button>
+            </span>
+          </div>`
       } else
-        btnHtml = `<button onclick="newMbr()" class="btn btn-primary">Create Member</button>`
+        btnHtml = `
+          <button onclick="newMbr()" class="btn btn-primary">Create Member</button>
+          <button onclick="cnlUpdMbr()" class="btn btn-default">Cancel</button>
+          `
 
       mbrInfo.append(`
         <div class="form-group">

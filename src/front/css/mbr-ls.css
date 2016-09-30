@@ -44,6 +44,15 @@ input[type="number"]::-webkit-inner-spin-button {
   transform: translateX(-50%);
 }
 
+.mbr-ls-find-li {
+  margin: 0;
+  padding: 5px;
+}
+
+.mbr-ls-find-li > div > small {
+  color: darkgrey;
+}
+
 .mbr-ls-table-title {
   display: none;
 }
@@ -54,12 +63,29 @@ input[type="number"]::-webkit-inner-spin-button {
 
 #mbr-total-has-mbr {
   display: inline-block;
-  min-width: 50px;
+  min-width: 80px;
+  margin-bottom: 10px;
 }
 
 #mbr-total-package {
   display: inline-block;
   min-width: 80px;
+  margin-bottom: 10px;
+}
+
+.mbr-ls-update:hover, .mbr-ls-update:active, .mbr-ls-update:visited, .mbr-ls-update:link {
+  color: indianred;
+}
+
+.mbr-ls-update {
+  color: indianred;
+  animation: blinker 1.3s linear infinite;
+}
+
+@keyframes blinker {  
+  50% { 
+    opacity: 0.3;
+  }
 }
 
 @media print

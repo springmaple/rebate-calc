@@ -1,4 +1,4 @@
-const {app, BrowserWindow, ipcMain} = require('electron')
+const {app, BrowserWindow, ipcMain, shell} = require('electron')
 const Datastore = require('nedb')
 const Util = require('./lib/util.js')
 const htmlPath = `file://${__dirname}/front/html`
@@ -213,4 +213,8 @@ ipcMain.on('ls-rebate', (evt, _id) => {
 
 ipcMain.on('check-has-mbr', (evt, _id) => {
   checkHasMbr(_id)
+})
+
+ipcMain.on('open-url', (evt, url) => {
+  shell.openExternal(url)
 })

@@ -13,6 +13,18 @@
   <script src="../js/awesomplete.js"></script>
   <script>if (window.module) module = window.module;</script>
   <script>
+    (function($) {
+      $.fn.goTo = function() {
+        let pos = $(this).offset().top
+        pos = parseFloat(pos) - 150 
+        $('html, body').animate({
+          scrollTop: pos + 'px'
+        }, 'fast')
+        return this // for chaining...
+      }
+    })(jQuery)
+  </script>
+  <script>
     const {ipcRenderer} = require('electron')
     const {toFloat, floatToString, joinDate} = require('./../../lib/util.js')
     const {version} = require('./../../package.json')
@@ -86,6 +98,10 @@
       $('.mbr-find-div').css('display', 'none')
     }
 
+    function openUrl(url) {
+      ipcRenderer.send('open-url', url)
+    }
+
     ipcRenderer.on('ls-mbr', (evt, mbrs) => {
       $('#mbr-total-has-mbr').html('0')
 
@@ -136,10 +152,8 @@
             </tr>`)
 
           ipcRenderer.send('check-has-mbr', mbr_id)
-          let label = mbr.mbrName
-          if (mbr.mbrId)
-            label += ` (${mbr.mbrId})`
-          mbrFindLs.push(label)
+          let label = `${mbr.mbrName}||${mbr.mbrId}`
+          mbrFindLs.push({label: label, value: mbr_id})
         }
 
         mbrTotalPackage.html(floatToString(totalPackage))
@@ -210,11 +224,23 @@
         	evt.preventDefault()
           $('#mbr-find').blur()
           $('#mbr-find').val('')
-          console.log(evt.text.label)
-          console.log(evt.text.value)
-          console.log(evt.text.valueOf())
-          console.log(evt.text.toString())
-      }, false);
+          highlight(evt.text.value)
+          $(`#mbr-ls-tr-${lastHighlightId}`).goTo()
+      })
+
+      // check new version
+      $.getJSON("https://api.github.com/repos/springmaple/rebate-calc/releases/latest", function(data) {
+        let tag = data['tag_name']
+        if (version !== tag) {
+          let url = data['html_url']
+          $('#mbr-ls-acts').append(
+            `<li><a href="javascript:openUrl('${url}')" title="${url}" class="mbr-ls-update">v ${data['tag_name']} available</a></li>`)
+
+          $('.mbr-ls-update').hover(function(evt) {
+            $(this).css('animation', 'none')
+          })
+        }
+      })
     }
   </script>
 
@@ -251,8 +277,8 @@
     $('#working-date-year').html(cnt)
   </script>
 
-  <ol class="breadcrumb no-print">
-    <li id="mbr-app-version"></li>
+  <ol id="mbr-ls-acts" class="breadcrumb no-print">
+    <li><span id="mbr-app-version"></span></li>
     <li><a href="javascript:showMbrInfo(null)" title="Ctrl+N">New Member</a></li>
     <li><a href="javascript:showFind()" title="Ctrl+F">Find Member</a></li>
     <li><a href="javascript:showPrint()" title="Ctrl+P">Print</a></li>
@@ -273,15 +299,21 @@
     mbrFindAwesomplete = new Awesomplete(document.getElementById("mbr-find"), {
       autoFirst: true,
       minChars: 1,
-      list: []
+      maxItems: 5,
+      item: function(text, input) {
+        let li = document.createElement('li')
+        text = text.split('||')
+				li.innerHTML = `<div class="mbr-ls-find-li"><div>${text[0]}</div><div><small>${text[1]}</small></div></div>`
+        return li 
+      }
     })
   </script>
 
   <div class="mbr-ls-table-title">Name List</div>
   <div class="row">
-      <div class="col-md-6"></div>
-      <div class="col-md-3 text-right"><span class="glyphicon glyphicon-user"></span><span id="mbr-total-has-mbr">0</span></div>
-      <div class="col-md-3 text-right"><span>Package Total:</span><span id="mbr-total-package">0</span></div>
+    <div class="col-md-6"></div>
+    <div class="col-md-3 text-right"><span class="glyphicon glyphicon-user"></span><span id="mbr-total-has-mbr">0</span></div>
+    <div class="col-md-3 text-right"><span><strong>Package Total:</strong></span><span id="mbr-total-package">0</span></div>
   </div>
   <table class="table table-condensed table-hover">
     <thead>
