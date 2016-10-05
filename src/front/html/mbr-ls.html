@@ -16,7 +16,7 @@
     (function($) {
       $.fn.goTo = function() {
         let pos = $(this).offset().top
-        pos = parseFloat(pos) - 150 
+        pos = parseFloat(pos) - 150
         $('html, body').animate({
           scrollTop: pos + 'px'
         }, 'fast')
@@ -26,7 +26,7 @@
   </script>
   <script>
     const {ipcRenderer} = require('electron')
-    const {toFloat, floatToString, joinDate} = require('./../../lib/util.js')
+    const {toFloat, floatToString} = require('./../../lib/util.js')
     const {version} = require('./../../package.json')
 
     var lastHighlightId = null
@@ -36,22 +36,18 @@
       ipcRenderer.send('ls-mbr', null)
     }
 
-    function setWorkingDate() {
-      let m = parseInt($('#working-date-month').val())
-      let y = parseInt($('#working-date-year').val())
-      let d = null
+    function setWorkingDay() {
+      let day = null
       $('#working-date-day li').each((idx, e) => {
         e = $(e)
         if (e.hasClass('active'))
-          d = (idx + 1) * 10
+          day = (idx + 1) * 10
       })
-      let date = joinDate(y, m, d)
-      ipcRenderer.send('set-working-date', date)
-      document.title = `Calc - ${date}`
+      ipcRenderer.send('set-working-day', day)
     }
 
-    function getWorkingDate() {
-      ipcRenderer.send('get-working-date', null)
+    function getWorkingDay() {
+      ipcRenderer.send('get-working-day', null)
     }
 
     function getMbrProfit() {
@@ -73,7 +69,7 @@
         } else
           e.removeClass('active')
       }
-      setWorkingDate()
+      setWorkingDay()
     }
 
     function highlight(_id) {
@@ -88,7 +84,7 @@
     }
 
     function showFind() {
-      let e = $('#mbr-find') 
+      let e = $('#mbr-find')
       $('.mbr-find-div').css('display', 'inline-block')
       e.focus()
       e.select()
@@ -163,7 +159,7 @@
           ipcRenderer.send('show-mbr-page', {_id: _id, name: 'mbr-rebate'})
         })
 
-        mbrFindAwesomplete.list = mbrFindLs 
+        mbrFindAwesomplete.list = mbrFindLs
         highlight(lastHighlightId)
       }
     })
@@ -190,11 +186,9 @@
       lsMbr()
     })
 
-    ipcRenderer.on('get-working-date', (evt, d) => {
-      $('#working-date-month').val(d.m)
-      $('#working-date-year').val(d.y)
+    ipcRenderer.on('get-working-day', (evt, day) => {
       let dayElement = $('#working-date-day li')
-      let j = (d.d / 10) - 1
+      let j = (day / 10) - 1
       for (let i=0; i<3; i++) {
         let e = $(dayElement[i])
         if (i == j)
@@ -205,10 +199,7 @@
     })
     
     window.onload = function () {
-      $('#working-date-month').change(setWorkingDate)
-      $('#working-date-year').change(setWorkingDate)
-
-      getWorkingDate()
+      getWorkingDay()
       getMbrProfit()
 
       $("body").keypress(function(evt) {
@@ -257,26 +248,9 @@
         <li><a href="javascript:selectDay(1)">20</a></li>
         <li><a href="javascript:selectDay(2)">30</a></li>
       </ul>
-      <ul class="nav navbar-nav navbar-right working-date-select-ul">
-        <li><a href="javascript:void(0)"><select class="working-date-select" id="working-date-month"><!-- INSERT MONTHS HERE --></select></a></li>
-        <li><a href="javascript:void(0)"><select class="working-date-select" id="working-date-year"><!-- INSERT YEARS HERE --></select></a></li>
-      </ul>
     </div>
   </nav>
-  <script>
-    let monthNames = [ "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" ]
-    let cnt = ''
-    for (let i=1; i<=12; i++)
-      cnt += `<option value="${i}">${monthNames[i-1]}</option>`
-    $('#working-date-month').html(cnt)
-
-    let y = (new Date()).getFullYear()
-    cnt = ''
-    for (let i=y-5; i<=y+5; i++)
-      cnt += `<option value="${i}">${i}</option>`
-    $('#working-date-year').html(cnt)
-  </script>
-
+  
   <ol id="mbr-ls-acts" class="breadcrumb no-print">
     <li><span id="mbr-app-version"></span></li>
     <li><a href="javascript:showMbrInfo(null)" title="Ctrl+N">New Member</a></li>
@@ -304,7 +278,7 @@
         let li = document.createElement('li')
         text = text.split('||')
 				li.innerHTML = `<div class="mbr-ls-find-li"><div>${text[0]}</div><div><small>${text[1]}</small></div></div>`
-        return li 
+        return li
       }
     })
   </script>
@@ -337,7 +311,7 @@
     </tbody>
   </table>
   <script>
-    let mbrProfit = $('#mbr-profit') 
+    let mbrProfit = $('#mbr-profit')
     mbrProfit.focusout(evt => {
       let parsedInput = toFloat(mbrProfit.val(), 2)
       mbrProfit.val(floatToString(parsedInput, 2))

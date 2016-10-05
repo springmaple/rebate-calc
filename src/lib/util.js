@@ -4,19 +4,24 @@ function toFloat(val, precision) {
 
 module.exports = {
 
-  getNearestDate: function() {
-    /* Get date nearest to 10/20/30. */
-    let d = new Date()
-    let n = Math.round(d.getDate() / 10) * 10
-    if (n <= 10)
-      n = 10
+  getNearestDay: function() {
+    let date = new Date()
+    let d = Math.round(date.getDate() / 10) * 10
+    if (d <= 10)
+      d = 10
     else if (n > 30)
-      n = 30
+      d = 30
+    return d
+  },
 
-    let m = d.getMonth() + 1
-    let y = d.getFullYear()
+  getTodayDate: function() {
+    /* Get date nearest to 10/20/30. */
+    let date = new Date()
+    let d = date.getDate()
+    let m = date.getMonth() + 1
+    let y = date.getFullYear()
 
-    return y * 10000 + m * 100 + n  // e.g 20160920
+    return y * 10000 + m * 100 + d  // e.g 20160920
   },
 
   joinDate: function(y, m, d) {
@@ -27,7 +32,7 @@ module.exports = {
     return {
       y: Math.floor(d/10000),
       m: Math.floor((d%10000)/100),
-      d: Math.floor(d%100) 
+      d: Math.floor(d%100)
     }
   },
 

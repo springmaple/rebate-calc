@@ -1,0 +1,68 @@
+TODO
+====
+- remind to save on member update page if any changes was made.
+- change icon
+- add back button for mbr-info and mbr-rebate
+
+
+Database Structure > v 0.2.0 (calc.dat2)
+========================================
+1. mbr
+  _id (str): nedb primary key.
+  _addDate (int): the real date for member added. e.g. 20150913
+  _rmDate (int): this should be the real date. _`MUST NOT`_ exists if mbr not yet removed.
+  _day (int): enum(10, 20, 30), which day this mbr belongs to.
+  mbrName (str): Member name.
+  mbrId (str, null): Member id.
+  mbrIc (str, null): Member IC.
+  mbrEmail (str, null): Member email.
+  mbrBankName (str, null): Member bank name.
+  mbrBankAcc (str, null): Member bank account number.
+  mbrJoinDate (str, null): Member join date.
+  mbrPackage (str, null): Member package.
+  mbrRemark (str, null): Member remark.
+  mbrRebate1 (Array<object>, null): [{mbrDay: 10, mbrName: "Member 1", mbrPackage: 10000.50}, ...]
+  mbrRebate2 (Array<object>, null): [{mbrDay: 10, mbrName: "Member 2", mbrPackage: 10.50}, ...]
+  mbrRebate3 (Array<object>, null): [{mbrDay: 20, mbrName: null, mbrPackage: null}, ...]
+
+2. profit (always one record only)
+  _id (str): 'profit'.
+  mbrProfit10 (float, null): Profit value for day 10.
+  mbrProfit20 (float, null): Profit value for day 20.
+  mbrProfit30 (float, null): Profit value for day 30.
+  
+
+Database Structure prior v 0.2.0 (calc.dat)
+===========================================
+1. mbr
+  _doc (str) 'mbr'
+  _startDate (int) when this mbr inserted and start functioning
+  _endDate (int) null if nothing.
+  _day (int) 10, 20, 30
+  mbrName (str)
+  mbrId (str)
+  mbrIc (str)
+  mbrEmail (str)
+  mbrBankName (str)
+  mbrBankAcc (str)
+  mbrJoinDate (str)
+  mbrPackage (float)
+  mbrRemark (str)
+
+2. profit
+  _doc (str) 'profit'
+  _date (int) when is this profit belongs to
+  mbrProfit (float)
+
+3. rebate-mbr
+  _doc (str) 'rebate-mbr'
+  mbr_id (str)
+  mbrPct (int) 3, 2, 1
+  mbr (Array<Object>) [{mbrDate: 10, mbrName: "user name"}]
+
+4. rebate-package
+  _doc = 'rebate-package'
+  _date (int) 20160930
+  mbr_id (str)
+  mbrPct (int) 3, 2, 1
+  mbrPackage (Array<int>) [1000, 2000, ...]

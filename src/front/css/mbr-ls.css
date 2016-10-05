@@ -10,19 +10,6 @@ input[type="number"]::-webkit-inner-spin-button {
     margin: 0;
 }
 
-.working-date-select-ul li a {
-  cursor: default;
-}
-
-.working-date-select {
-  cursor: pointer;
-  margin: 0;
-  padding: 0;
-  border: none;
-  background: none;
-  width: 100px;
-}
-
 .mbr-profit {
   background: none;
   width: 35pt;
@@ -82,14 +69,14 @@ input[type="number"]::-webkit-inner-spin-button {
   animation: blinker 1.3s linear infinite;
 }
 
-@keyframes blinker {  
-  50% { 
+@keyframes blinker {
+  50% {
     opacity: 0.3;
   }
 }
 
 @media print
-{    
+{
     .no-print, .no-print * {
       display: none;
     }

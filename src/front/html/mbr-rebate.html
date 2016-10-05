@@ -36,13 +36,12 @@
 
     function updSubtotal(i, save) {
       i = parseInt(i)
-      let data = {10: 0, 20: 0, 30: 0}   
+      let data = {10: 0, 20: 0, 30: 0}
       let dataCount = {10: 0, 20: 0, 30: 0}
 
       let rebateMbrLs = []
-      let rebateMbrSave = {mbr_id: _id, mbrPct: i, mbr: rebateMbrLs}
-      let rebatePackageLs = []
-      let rebatePackageSave = {mbr_id: _id, mbrPct: i, mbrPackage: rebatePackageLs}
+      let rebateMbrSave = { _id: _id }
+      rebateMbrSave['mbrRebate' + i] = rebateMbrLs
 
       for (let j=0; j<30; j++) {
         let rebateMbrDatesId = `input:checkbox[name="rebate-mbr-date-${i}-${j}"]`
@@ -70,10 +69,9 @@
         }
 
         if (save) {
-          rebateMbrLs.push({mbrName: $(rebateMbrNameId).val(), mbrDate: mbrDate})
           if (isNaN(mbrPackage))
             mbrPackage = null
-          rebatePackageLs.push(mbrPackage)
+          rebateMbrLs.push({mbrName: $(rebateMbrNameId).val(), mbrDay: mbrDate, mbrPackage: mbrPackage})
         }
       }
 
@@ -84,10 +82,8 @@
         $(`#rebate-subtotal-${i}-${k}`).html(floatToString(mbrPackage * i / 100, 2))
       }
 
-      if (save) {
-        ipcRenderer.send('set-rebate-mbr', rebateMbrSave)
-        ipcRenderer.send('set-rebate-package', rebatePackageSave)
-      }
+      if (save)
+        ipcRenderer.send('set-mbr-rebate', rebateMbrSave)
 
       // update total
       for (let k=10; k<=30; k+=10) {
@@ -106,35 +102,24 @@
     ipcRenderer.on('get-mbr', (evt, mbr) => {
       for (key in map)
         $(`#${map[key]}`).html(mbr[key])
-    })
 
-    ipcRenderer.on('ls-rebate-mbr', (evt, rebateMbr) => {
-      let {mbr_id, mbrPct, mbr} = rebateMbr
-      let i = mbrPct
-      for (let j=0; j<30; j++) {
-        let mbrDate = mbr[j].mbrDate
-        if (mbrDate !== null)
-          selectMbrDate(i, j, mbrDate)
-        $(`#rebate-mbr-name-${i}-${j}`).val(mbr[j].mbrName)
+      for (let i=1; i<=3; i++) {
+        let mbrRebate = mbr['mbrRebate' + i]
+        if (mbrRebate) {
+          for (let j=0; j<30; j++) {
+            let {mbrDay, mbrName, mbrPackage} = mbrRebate[j]
+            if (mbrDay !== null)
+              selectMbrDate(i, j, mbrDay)
+            $(`#rebate-mbr-name-${i}-${j}`).val(mbrName)
+            $(`#rebate-mbr-package-${i}-${j}`).val(floatToString(mbrPackage, 2))
+          }
+        }
+        updSubtotal(i, false)
       }
-      updSubtotal(i, false)
-    })
-
-    ipcRenderer.on('ls-rebate-package', (evt, rebatePackage) => {
-      let {mbr_id, mbrPct, mbrPackage} = rebatePackage
-      let i = mbrPct
-      for (let j=0; j<30; j++)
-        $(`#rebate-mbr-package-${i}-${j}`).val(floatToString(mbrPackage[j], 2))
-      updSubtotal(i, false)
-    })
-
-    ipcRenderer.on('ls-rebate-package-no-data', (evt, i) => {
-      updSubtotal(i, false)
     })
 
     window.onload = function () {
       ipcRenderer.send('get-mbr', _id)
-      ipcRenderer.send('ls-rebate', _id)
     }
   </script>
 
@@ -229,7 +214,7 @@
           </div>
         </div>`)
       
-      $(`#${rebatePanelHeadId}`).click(rebatePanelBodyId, function(evt) { //can use dblclick 
+      $(`#${rebatePanelHeadId}`).click(rebatePanelBodyId, function(evt) { //can use dblclick
         $(`#${evt.data}`).toggleClass('wrap no-wrap')
       })
     }
@@ -310,7 +295,7 @@
 
     for (let i=3; i>=1; i--) {
       for (let j=0; j<30; j++) {
-        let rebateMbrPackage = $(`#rebate-mbr-package-${i}-${j}`) 
+        let rebateMbrPackage = $(`#rebate-mbr-package-${i}-${j}`)
         rebateMbrPackage.focusout(function(evt) {
           let e = $(this)
           let inp = toFloat(e.val(), 2)
@@ -325,7 +310,7 @@
           this.select()
         })
 
-        let rebateMbrName = $(`#rebate-mbr-name-${i}-${j}`) 
+        let rebateMbrName = $(`#rebate-mbr-name-${i}-${j}`)
         rebateMbrName.focusout(function(evt) {
           updSubtotal(rebateMbrName.attr('i'), true)
         })

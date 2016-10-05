@@ -1,22 +1,124 @@
 const {app, BrowserWindow, ipcMain, shell} = require('electron')
 const Datastore = require('nedb')
 const Util = require('./lib/util.js')
+const fs = require('fs');
 const htmlPath = `file://${__dirname}/front/html`
+const oldDbPath = `${__dirname}\\..\\..\\calc.dat`
+const newDbPath = `${__dirname}\\..\\..\\calc.dat2`
 
-var mbrDb = new Datastore({ filename: `${__dirname}\\..\\..\\calc.dat`, autoload: true })
-var workingDate = Util.getNearestDate()
+var mbrDb = null
+var workingDay = Util.getNearestDay()
 var win = null
 var popWin = null
+var hasOldDb = false
 
+function initDb(callback) {
+  
+  try {
+    fs.accessSync(oldDbPath, fs.F_OK)
+    hasOldDb = true
+  } catch (e) {
+    mbrDb = new Datastore({ filename: newDbPath, autoload: true })
+    callback()
+  }
+  
+  if (hasOldDb) {
+    try {
+      fs.accessSync(newDbPath, fs.F_OK)
+      mbrDb = new Datastore({ filename: newDbPath, autoload: true })
+      callback()
+    } catch (e) {
+      let oldDb = new Datastore({ filename: oldDbPath, autoload: true })
+      mbrDb = new Datastore({ filename: newDbPath, autoload: true })
+      
+      let profitDat = {_id: 'profit', mbrProfit10: null, mbrProfit20: null, mbrProfit30: null}
+      oldDb.find({ _doc: 'profit' }, (evt, oldProfit) => {
+        for (let profit of oldProfit) {
+          let {m, d} = Util.splitDate(profit._date)
+          if (m == 9) {
+            let mbrProfit = Util.toFloat(profit.mbrProfit, 2)
+            if (isNaN(mbrProfit))
+              mbrProfit = null
+            profitDat['mbrProfit' + d] = mbrProfit
+          }
+        }
+
+        mbrDb.insert(profitDat)
+        
+        oldDb.find({ _doc: 'mbr' }, (evt, mbrs) => {
+          if (!mbrs) {
+            callback()
+          } else {
+            let totalMbrs = mbrs.length
+            let totalProcessed = 0
+
+            for (let mbr of mbrs) {
+              mbr._addDate = mbr._startDate
+              if (mbr._endDate)
+                mbr._rmDate = mbr._endDate
+              delete mbr._startDate
+              delete mbr._endDate
+              delete mbr._doc
+              
+              console.log('MBR:::::' + mbr)
+              
+              for (let i=1; i<=3; i++) {
+                let mbrRebateLs = []
+                mbr['mbrRebate' + i] = mbrRebateLs
+                for (let j=0; j<30; j++) {
+                  mbrRebateLs.push({mbrDay: null, mbrName: null, mbrPackage: null})
+                }
+              }
+              
+              oldDb.find({ _doc: 'rebate-mbr', mbr_id: mbr._id }, (err, mbrRebates) => {
+                for (let oldMbrRebate of mbrRebates) {
+                  let oldMbrRebateLs = oldMbrRebate.mbr
+                  if (oldMbrRebateLs) {
+                    let mbrRebateLs = mbr['mbrRebate' + oldMbrRebate.mbrPct]
+                    for (let j=0; j<30; j++) {
+                      mbrRebateLs[j].mbrName = oldMbrRebateLs[j].mbrName
+                      mbrRebateLs[j].mbrDay = oldMbrRebateLs[j].mbrDate
+                    }
+                  }
+                }
+                
+                oldDb.find({ _doc: 'rebate-package', mbr_id: mbr._id }, (err, mbrPackages) => {
+                  for (let oldMbrPackage of mbrPackages) {
+                    if (Util.splitDate(oldMbrPackage._date).m != 9)
+                      continue
+                    let oldMbrPackageLs = oldMbrPackage.mbrPackage
+                    if (oldMbrPackageLs) {
+                      let mbrRebateLs = mbr['mbrRebate' + oldMbrPackage.mbrPct]
+                      for (let j=0; j<30; j++) {
+                        mbrRebateLs[j].mbrPackage = oldMbrPackageLs[j]
+                      }
+                    }
+                  }
+                  
+                  mbrDb.insert(mbr)
+                  totalProcessed += 1
+                  if (totalProcessed == totalMbrs)
+                    callback()
+                })
+              })
+            }
+          }
+        })
+
+      })
+      
+    }
+  }
+}
 
 function lsMbr() {
-  mbrDb.find({
-    _doc: 'mbr', _startDate: { $lte: workingDate }, _day: Util.splitDate(workingDate).d,
-    $or: [{ _endDate: null }, { _endDate: { $gt: workingDate } }]
-  })
+  mbrDb.find({ _day: workingDay, _rmDate: { $exists: false } })
     .sort({ mbrName: 1 })
     .exec((err, mbrs) => {
-      win.webContents.send('ls-mbr', mbrs)
+      if (err)
+        alert(err)
+      else
+        win.webContents.send('ls-mbr', mbrs)
     })
 }
 
@@ -27,52 +129,36 @@ function onMbrChanged(err) {
 }
 
 function getProfit() {
-  mbrDb.findOne({ _doc: 'profit', _date: workingDate }, (err, profit) => {
-    win.webContents.send('get-mbr-profit', profit ? profit.mbrProfit : null)
+  mbrDb.findOne({ _id: 'profit' }, (err, profit) => {
+    let profit_ = null
+    if (profit) {
+      let mbrProfit = profit['mbrProfit' + workingDay]
+      if (mbrProfit !== undefined)
+        profit_ = mbrProfit
+    }
+    win.webContents.send('get-mbr-profit', profit_)
   })
 }
 
 function checkHasMbr(_id) {
-  let query = { _doc: 'rebate-package', mbr_id: _id, _date: workingDate }
-  let rebatePackageActive = { 1: [], 2: [], 3: [] }
-  mbrDb.find(query, (err, rebatePackages) => {
-    let hasRebatePackage = false
-    for (rebatePackage of rebatePackages) {
-      let rpArray = rebatePackageActive[rebatePackage.mbrPct]
-      for (let i = 0; i < rebatePackage.mbrPackage.length; i++) {
-        let mbrPackageVal = rebatePackage.mbrPackage[i]
-        let val = parseFloat(mbrPackageVal)
-        if (!isNaN(val) && val > 0) {
-          rpArray.push(i)
-          hasRebatePackage = true
+  mbrDb.findOne({ _id: _id }, (err, mbr) => {
+    let hasMbr = false
+    for (let mbrRebate of [mbr.mbrRebate1, mbr.mbrRebate2, mbr.mbrRebate3]) {
+      if (!mbrRebate)
+        continue
+      
+      for (let mbrRebate_ of mbrRebate) {
+        if (mbrRebate_.mbrDay === null)
+          continue
+          
+        let mbrPackage = parseFloat(mbrRebate_.mbrPackage)
+        if (!isNaN(mbrPackage) && mbrPackage > 0) {
+          hasMbr = true
+          break
         }
       }
     }
-
-    if (hasRebatePackage) {
-      query = { _doc: 'rebate-mbr', mbr_id: _id }
-      mbrDb.find(query, (err, rebateMbrs) => {
-        let rebateMbrActive = { 1: null, 2: null, 3: null }
-        let log = false
-        for (rebateMbr of rebateMbrs) {
-          log = true
-          rebateMbrActive[rebateMbr.mbrPct] = rebateMbr.mbr
-        }
-
-        for (let z = 1; z <= 3; z++) {
-          let rmActive = rebateMbrActive[z]
-          if (!rmActive)
-            continue
-          for (j of rebatePackageActive[z])
-            if (rmActive[j].mbrDate !== null) {
-              win.webContents.send('check-has-mbr', { mbr_id: _id, hasMbr: true })
-              return
-            }
-        }
-        win.webContents.send('check-has-mbr', { mbr_id: _id, hasMbr: false })
-      })
-    } else
-      win.webContents.send('check-has-mbr', { mbr_id: _id, hasMbr: false })
+    win.webContents.send('check-has-mbr', { mbr_id: _id, hasMbr: hasMbr })
   })
 }
 
@@ -81,14 +167,16 @@ app.on('browser-window-created', (e, window) => {
 })
 
 app.on('ready', () => {
-  win = new BrowserWindow({ minWidth: 400, minHeight: 300, show: false, title: `Calc - ${workingDate}` })
-  win.maximize()
-  win.on('closed', () => {
-    win = null
-    app.quit()
+  initDb(() => {
+    win = new BrowserWindow({ minWidth: 400, minHeight: 300, show: false, title: `Calc` })
+    win.maximize()
+    win.on('closed', () => {
+      win = null
+      app.quit()
+    })
+    win.loadURL(`${htmlPath}/mbr-ls.html`)
+    win.show()
   })
-  win.loadURL(`${htmlPath}/mbr-ls.html`)
-  win.show()
 })
 
 ipcMain.on('show-mbr-page', (evt, page) => {
@@ -114,21 +202,19 @@ ipcMain.on('show-mbr-page', (evt, page) => {
   popWin.show()
 })
 
-ipcMain.on('set-working-date', (evt, date) => {
-  workingDate = date
-  win.webContents.send('get-working-date', Util.splitDate(workingDate))
+ipcMain.on('set-working-day', (evt, day) => {
+  workingDay = parseInt(day)
+  win.webContents.send('get-working-day', day)
   getProfit()
 })
 
-ipcMain.on('get-working-date', (evt, arg) => {
-  evt.sender.send('get-working-date', Util.splitDate(workingDate))
+ipcMain.on('get-working-day', (evt, _) => {
+  evt.sender.send('get-working-day', workingDay)
 })
 
 ipcMain.on('new-mbr', (evt, mbr) => {
-  mbr._startDate = workingDate
-  mbr._endDate = null
-  mbr._day = Util.splitDate(workingDate).d
-  mbr._doc = 'mbr'
+  mbr._addDate = Util.getTodayDate()
+  mbr._day = workingDay
   mbrDb.insert(mbr, onMbrChanged)
 })
 
@@ -137,7 +223,7 @@ ipcMain.on('upd-mbr', (evt, obj) => {
 })
 
 ipcMain.on('del-mbr', (evt, _id) => {
-  mbrDb.update({ _id: _id }, { $set: { _endDate: workingDate } }, {}, onMbrChanged)
+  mbrDb.update({ _id: _id }, { $set: { _rmDate: Util.getTodayDate() } }, {}, onMbrChanged)
 })
 
 ipcMain.on('get-mbr', (evt, _id) => {
@@ -149,65 +235,37 @@ ipcMain.on('get-mbr', (evt, _id) => {
 ipcMain.on('ls-mbr', lsMbr)
 
 ipcMain.on('set-mbr-profit', (evt, profit) => {
-  let query = { _doc: 'profit', _date: workingDate }
-  if (profit === null)
-    mbrDb.remove(query)
-  else
-    mbrDb.update(query, { $set: { mbrProfit: profit } }, {},
-      (err, numAff) => {
-        if (!numAff)
-          mbrDb.insert({ _doc: 'profit', _date: workingDate, mbrProfit: profit })
-      })
+  let updData = {}
+  updData['mbrProfit' + workingDay] = profit
+  mbrDb.update({ _id: 'profit' }, { $set: updData }, {},
+    (err, numAff) => {
+      if (!numAff) {
+        updData._id = 'profit'
+        mbrDb.insert(updData)
+      }
+    })
 })
 
 ipcMain.on('get-mbr-profit', getProfit)
 
-ipcMain.on('set-rebate-mbr', (evt, rebateMbr) => {
-  let _doc = 'rebate-mbr'
-  let {mbr_id, mbrPct, mbr} = rebateMbr
-  let query = { _doc: _doc, mbr_id: mbr_id, mbrPct: mbrPct }
-  mbrDb.update(query, { $set: { mbr: mbr } }, {},
-    (err, numAff) => {
-      if (!numAff)
-        mbrDb.insert({ _doc: _doc, mbr_id: mbr_id, mbrPct: mbrPct, mbr: mbr }, (err) => {
-          checkHasMbr(mbr_id)
-        })
-      else
-        checkHasMbr(mbr_id)
-    })
-})
-
-ipcMain.on('set-rebate-package', (evt, rebatePackage) => {
-  let _doc = 'rebate-package'
-  let _date = workingDate
-  let {mbr_id, mbrPct, mbrPackage} = rebatePackage
-  let query = { _doc: _doc, _date: _date, mbr_id: mbr_id, mbrPct: mbrPct }
-  mbrDb.update(query, { $set: { mbrPackage: mbrPackage } }, {},
-    (err, numAff) => {
-      if (!numAff)
-        mbrDb.insert({ _doc: _doc, _date: workingDate, mbr_id: mbr_id, mbrPct: mbrPct, mbrPackage: mbrPackage }, () => {
-          checkHasMbr(mbr_id)
-        })
-      else
-        checkHasMbr(mbr_id)
-    })
-})
-
-ipcMain.on('ls-rebate', (evt, _id) => {
-  for (let mbrPct = 3; mbrPct >= 1; mbrPct--) {
-    let queryMbr = { _doc: 'rebate-mbr', mbr_id: _id, mbrPct: mbrPct }
-    mbrDb.findOne(queryMbr, (err, rebateMbr) => {
-      if (rebateMbr)
-        evt.sender.send('ls-rebate-mbr', rebateMbr)
-    })
-
-    let queryPackage = { _doc: 'rebate-package', _date: workingDate, mbr_id: _id, mbrPct: mbrPct }
-    mbrDb.findOne(queryPackage, (err, rebatePackage) => {
-      if (rebatePackage)
-        evt.sender.send('ls-rebate-package', rebatePackage)
-      else
-        evt.sender.send('ls-rebate-package-no-data', mbrPct)
-    })
+ipcMain.on('set-mbr-rebate', (evt, obj) => {
+  // obj: {_id: 'nedb_id', mbrRebate#: [...], }
+  let _id = obj._id
+  for (let i=1; i<=3; i++) {
+    let key = 'mbrRebate' + i
+    let mbrRebate = obj[key]
+    if (mbrRebate) {
+      let updDat = {}
+      updDat[key] = mbrRebate
+      mbrDb.update({ _id: _id }, { $set: updDat }, {}, (err, numAff) => {
+        if (err)
+          alert(err)
+        else if (!numAff)
+          alert(key + ' not updated!')
+        else
+          checkHasMbr(_id)
+      })
+    }
   }
 })
 
