@@ -98,42 +98,69 @@
       ipcRenderer.send('open-url', url)
     }
 
-    ipcRenderer.on('ls-mbr', (evt, mbrs) => {
-      $('#mbr-total-has-mbr').html('0')
+    function checkHasMbr(mbr) {
+      for (let mbrRebates of [mbr.mbrRebate1, mbr.mbrRebate2, mbr.mbrRebate3]) {
+        if (!mbrRebates || mbrRebates.length <= 0)
+          continue
+        
+        for (let mbrRebate of mbrRebates) {
+          if (mbrRebate.mbrDay === null)
+            continue
 
-      mbrsLen = mbrs.length
+          let mbrPackage = parseFloat(mbrRebate.mbrPackage)
+          if (!isNaN(mbrPackage) && mbrPackage > 0)
+            return true
+        }
+      }
+      return false
+    }
+
+    ipcRenderer.on('ls-mbr', (evt, mbrs) => {
+      mbrsLen = mbrs['length']
       let mbrTotalPackage = $('#mbr-total-package')
+      let mbrTotalHasMbr = $('#mbr-total-has-mbr')
       let mbrLsTableBody = $('#mbr-ls-table-body')
 
-      if (!mbrsLen) {
-        mbrLsTableBody.html('<tr><td colspan="12">No records.</td></tr>')
-        mbrTotalPackage.html('0')
-        lastHighlightId = null
-        mbrFindAwesomplete.list = []
+      mbrTotalPackage.html('-')
+      mbrTotalHasMbr.html('-')
+      
 
+      if (!mbrsLen) {
+        lastHighlightId = null
+        mbrLsTableBody.html('<tr><td colspan="12">No records.</td></tr>')
+        mbrFindAwesomplete.list = []
       } else {
         let profitPct = toFloat($('#mbr-profit').val(), 2)
+        let isProfitAvail = !isNaN(profitPct)
         let totalPackage = 0
+        let totalHasMbr = 0
         let mbrFindLs = []
+        let mbrLsTableBodyCtnt = ''
 
-        mbrTotalPackage.html('Calculating...')
-        mbrLsTableBody.html('')
-
-        for (mbr of mbrs) {
-          let package = toFloat(mbr.mbrPackage, 2)
+        for (let mbr of mbrs) {
           let profit = 'N/A'
-          if (!isNaN(package)) {
-            totalPackage += package
-            let profit_ = toFloat(package * profitPct / 100, 2)
-            if (!isNaN(profit_))
-              profit = floatToString(profit_, 2)
+          if (isProfitAvail) {
+            let mbrPackage = toFloat(mbr.mbrPackage, 2)
+            if (!isNaN(mbrPackage)) {
+              totalPackage += mbrPackage
+              let profit_ = toFloat(mbrPackage * profitPct / 100, 2)
+              if (!isNaN(profit_))
+                profit = floatToString(profit_, 2)
+            }
           }
 
           let mbr_id = mbr._id
+          let hasMbrCls = ''
+          if (checkHasMbr(mbr)) {
+            hasMbrCls = 'class="glyphicon glyphicon-user"'
+            totalHasMbr += 1
+          }
 
-          mbrLsTableBody.append(`
+          mbrFindLs.push({label: `${mbr.mbrName}||${mbr.mbrId}`, value: mbr_id})
+
+          mbrLsTableBodyCtnt += `
             <tr class="mbr-tr" mbrId="${mbr_id}" id="mbr-ls-tr-${mbr_id}" onclick="highlight('${mbr_id}')">
-              <td><span id="mbr-has-mbr-${mbr_id}"></span></td>
+              <td><span ${hasMbrCls}></span></td>
               <td><a class="no-blue-text" href="javascript:showMbrInfo('${mbr_id}')">${mbr.mbrName}</a></td>
               <td>${mbr.mbrId}</td>
               <td>${mbr.mbrHp}</td>
@@ -145,39 +172,19 @@
               <td>${floatToString(mbr.mbrPackage, 2)}</td>
               <td>${mbr.mbrRemark}</td>
               <td>${profit}</td>
-            </tr>`)
-
-          ipcRenderer.send('check-has-mbr', mbr_id)
-          let label = `${mbr.mbrName}||${mbr.mbrId}`
-          mbrFindLs.push({label: label, value: mbr_id})
+            </tr>`
         }
 
         mbrTotalPackage.html(floatToString(totalPackage))
+        mbrTotalHasMbr.html(totalHasMbr.toString())
+        mbrLsTableBody.html(mbrLsTableBodyCtnt)
+        mbrFindAwesomplete.list = mbrFindLs
+        highlight(lastHighlightId)
 
         $('.mbr-tr').dblclick(function() {
           let _id = $(this).attr('mbrId')
           ipcRenderer.send('show-mbr-page', {_id: _id, name: 'mbr-rebate'})
         })
-
-        mbrFindAwesomplete.list = mbrFindLs
-        highlight(lastHighlightId)
-      }
-    })
-
-    ipcRenderer.on('check-has-mbr', (evt, hasMbrData) => {
-      let {mbr_id, hasMbr} = hasMbrData
-      let e = $(`#mbr-has-mbr-${mbr_id}`)
-      let total = $('#mbr-total-has-mbr')
-      if (hasMbr) {
-        if (!e.hasClass('glyphicon')) {
-          e.addClass('glyphicon glyphicon-user')
-          total.html(parseInt(total.html()) + 1)
-        }
-      } else {
-        if (e.hasClass('glyphicon')) {
-          e.removeClass('glyphicon glyphicon-user')
-          total.html(parseInt(total.html()) - 1)
-        }
       }
     })
 
@@ -209,7 +216,7 @@
           showFind()
         else if (evt.which == 16)  // ctrl + p
           showPrint()
-      });
+      })
 
       window.addEventListener("awesomplete-select", function(evt){
         	evt.preventDefault()
@@ -224,8 +231,11 @@
         let tag = data['tag_name']
         if (version !== tag) {
           let url = data['html_url']
-          $('#mbr-ls-acts').append(
-            `<li><a href="javascript:openUrl('${url}')" title="${url}" class="mbr-ls-update">v ${data['tag_name']} available</a></li>`)
+          let lbl = `v ${data['tag_name']} available`
+          $('#mbr-ls-acts').append(`
+            <li>
+              <a href="javascript:openUrl('${url}')" title="${url}" class="mbr-ls-update">${lbl}</a>
+            </li>`)
 
           $('.mbr-ls-update').hover(function(evt) {
             $(this).css('animation', 'none')
@@ -266,7 +276,7 @@
     let mbrFind = $('#mbr-find')
     mbrFind.focusout(hideFind)
     mbrFind.keyup(evt => {
-      if (evt.which == 27)
+      if (evt.which == 27)  // ESC
         mbrFind.blur()
     })
 
@@ -286,8 +296,14 @@
   <div class="mbr-ls-table-title">Name List</div>
   <div class="row">
     <div class="col-md-6"></div>
-    <div class="col-md-3 text-right"><span class="glyphicon glyphicon-user"></span><span id="mbr-total-has-mbr">0</span></div>
-    <div class="col-md-3 text-right"><span><strong>Package Total:</strong></span><span id="mbr-total-package">0</span></div>
+    <div class="col-md-3 text-right">
+      <span class="glyphicon glyphicon-user"></span>
+      <span id="mbr-total-has-mbr">-</span>
+    </div>
+    <div class="col-md-3 text-right">
+      <span><strong>Package Total:</strong></span>
+      <span id="mbr-total-package">-</span>
+    </div>
   </div>
   <table class="table table-condensed table-hover">
     <thead>
@@ -319,10 +335,10 @@
       lsMbr()
     })
     mbrProfit.keypress(evt => {
-      if (evt.which == 13)
+      if (evt.which == 13)  // ENTER
         mbrProfit.blur()
     })
-    mbrProfit.focus(function(){
+    mbrProfit.focus(function() {
       this.select()
     })
   </script>
