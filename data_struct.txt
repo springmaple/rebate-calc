@@ -66,3 +66,6 @@ Database Structure prior v 0.2.0 (calc.dat)
   mbr_id (str)
   mbrPct (int) 3, 2, 1
   mbrPackage (Array<int>) [1000, 2000, ...]
+
+Events
+======

@@ -7,243 +7,21 @@
   <link rel="stylesheet" href="../css/awesomplete.css">
   <link rel="stylesheet" href="../css/mbr-ls.css">
 
-  <script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
+  <script>
+    if (typeof module === 'object') {
+      window.module = module
+      module = undefined
+    }
+  </script>
   <script src="../js/jquery.js"></script>
   <script src="../js/boostrap.js"></script>
   <script src="../js/awesomplete.js"></script>
-  <script>if (window.module) module = window.module;</script>
   <script>
-    (function($) {
-      $.fn.goTo = function() {
-        let pos = $(this).offset().top
-        pos = parseFloat(pos) - 150
-        $('html, body').animate({
-          scrollTop: pos + 'px'
-        }, 'fast')
-        return this // for chaining...
-      }
-    })(jQuery)
-  </script>
-  <script>
-    const {ipcRenderer} = require('electron')
-    const {toFloat, floatToString} = require('./../../lib/util.js')
-    const {version} = require('./../../package.json')
-
-    var lastHighlightId = null
-    var mbrFindAwesomplete = null
-
-    function lsMbr() {
-      ipcRenderer.send('ls-mbr', null)
-    }
-
-    function setWorkingDay() {
-      let day = null
-      $('#working-date-day li').each((idx, e) => {
-        e = $(e)
-        if (e.hasClass('active'))
-          day = (idx + 1) * 10
-      })
-      ipcRenderer.send('set-working-day', day)
-    }
-
-    function getWorkingDay() {
-      ipcRenderer.send('get-working-day', null)
-    }
-
-    function getMbrProfit() {
-      ipcRenderer.send('get-mbr-profit', null)
-    }
-
-    function showMbrInfo(_id) {  // show create new member form if _id is null.
-      ipcRenderer.send('show-mbr-page', {_id: _id, name: 'mbr-info'})
-    }
-
-    function selectDay(d) {
-      let dayElement = $('#working-date-day li')
-      for (let i=0; i<3; i++) {
-        e = $(dayElement[i])
-        if (d == i) {
-          if (e.hasClass('active'))
-            return
-          e.addClass('active')
-        } else
-          e.removeClass('active')
-      }
-      setWorkingDay()
-    }
-
-    function highlight(_id) {
-      $(`#mbr-ls-tr-${lastHighlightId}`).removeClass('mbr-tr-highlight')
-      lastHighlightId = _id
-      $(`#mbr-ls-tr-${lastHighlightId}`).addClass('mbr-tr-highlight')
-    }
-
-    function showPrint() {
-      $('#mbr-find').blur()
-      window.print()
-    }
-
-    function showFind() {
-      let e = $('#mbr-find')
-      $('.mbr-find-div').css('display', 'inline-block')
-      e.focus()
-      e.select()
-    }
-
-    function hideFind() {
-      $('.mbr-find-div').css('display', 'none')
-    }
-
-    function openUrl(url) {
-      ipcRenderer.send('open-url', url)
-    }
-
-    function checkHasMbr(mbr) {
-      for (let mbrRebates of [mbr.mbrRebate1, mbr.mbrRebate2, mbr.mbrRebate3]) {
-        if (!mbrRebates || mbrRebates.length <= 0)
-          continue
-        
-        for (let mbrRebate of mbrRebates) {
-          if (mbrRebate.mbrDay === null)
-            continue
-
-          let mbrPackage = parseFloat(mbrRebate.mbrPackage)
-          if (!isNaN(mbrPackage) && mbrPackage > 0)
-            return true
-        }
-      }
-      return false
-    }
-
-    ipcRenderer.on('ls-mbr', (evt, mbrs) => {
-      mbrsLen = mbrs['length']
-      let mbrTotalPackage = $('#mbr-total-package')
-      let mbrTotalHasMbr = $('#mbr-total-has-mbr')
-      let mbrLsTableBody = $('#mbr-ls-table-body')
-
-      mbrTotalPackage.html('-')
-      mbrTotalHasMbr.html('-')
-      
-
-      if (!mbrsLen) {
-        lastHighlightId = null
-        mbrLsTableBody.html('<tr><td colspan="12">No records.</td></tr>')
-        mbrFindAwesomplete.list = []
-      } else {
-        let profitPct = toFloat($('#mbr-profit').val(), 2)
-        let isProfitAvail = !isNaN(profitPct)
-        let totalPackage = 0
-        let totalHasMbr = 0
-        let mbrFindLs = []
-        let mbrLsTableBodyCtnt = ''
-
-        for (let mbr of mbrs) {
-          let profit = 'N/A'
-          if (isProfitAvail) {
-            let mbrPackage = toFloat(mbr.mbrPackage, 2)
-            if (!isNaN(mbrPackage)) {
-              totalPackage += mbrPackage
-              let profit_ = toFloat(mbrPackage * profitPct / 100, 2)
-              if (!isNaN(profit_))
-                profit = floatToString(profit_, 2)
-            }
-          }
-
-          let mbr_id = mbr._id
-          let hasMbrCls = ''
-          if (checkHasMbr(mbr)) {
-            hasMbrCls = 'class="glyphicon glyphicon-user"'
-            totalHasMbr += 1
-          }
-
-          mbrFindLs.push({label: `${mbr.mbrName}||${mbr.mbrId}`, value: mbr_id})
-
-          mbrLsTableBodyCtnt += `
-            <tr class="mbr-tr" mbrId="${mbr_id}" id="mbr-ls-tr-${mbr_id}" onclick="highlight('${mbr_id}')">
-              <td><span ${hasMbrCls}></span></td>
-              <td><a class="no-blue-text" href="javascript:showMbrInfo('${mbr_id}')">${mbr.mbrName}</a></td>
-              <td>${mbr.mbrId}</td>
-              <td>${mbr.mbrHp}</td>
-              <td>${mbr.mbrIc}</td>
-              <td>${mbr.mbrEmail}</td>
-              <td>${mbr.mbrBankName}</td>
-              <td>${mbr.mbrBankAcc}</td>
-              <td>${mbr.mbrJoinDate}</td>
-              <td>${floatToString(mbr.mbrPackage, 2)}</td>
-              <td>${mbr.mbrRemark}</td>
-              <td>${profit}</td>
-            </tr>`
-        }
-
-        mbrTotalPackage.html(floatToString(totalPackage))
-        mbrTotalHasMbr.html(totalHasMbr.toString())
-        mbrLsTableBody.html(mbrLsTableBodyCtnt)
-        mbrFindAwesomplete.list = mbrFindLs
-        highlight(lastHighlightId)
-
-        $('.mbr-tr').dblclick(function() {
-          let _id = $(this).attr('mbrId')
-          ipcRenderer.send('show-mbr-page', {_id: _id, name: 'mbr-rebate'})
-        })
-      }
-    })
-
-    ipcRenderer.on('get-mbr-profit', (evt, profit) => {
-      $('#mbr-profit').val(floatToString(profit, 2))
-      lsMbr()
-    })
-
-    ipcRenderer.on('get-working-day', (evt, day) => {
-      let dayElement = $('#working-date-day li')
-      let j = (day / 10) - 1
-      for (let i=0; i<3; i++) {
-        let e = $(dayElement[i])
-        if (i == j)
-          e.addClass('active')
-        else
-          e.removeClass('active')
-      }
-    })
-    
-    window.onload = function () {
-      getWorkingDay()
-      getMbrProfit()
-
-      $("body").keypress(function(evt) {
-        if (evt.which == 14)  // ctrl + n
-          showMbrInfo(null)
-        else if (evt.which == 6)  // ctrl + f
-          showFind()
-        else if (evt.which == 16)  // ctrl + p
-          showPrint()
-      })
-
-      window.addEventListener("awesomplete-select", function(evt){
-        	evt.preventDefault()
-          $('#mbr-find').blur()
-          $('#mbr-find').val('')
-          highlight(evt.text.value)
-          $(`#mbr-ls-tr-${lastHighlightId}`).goTo()
-      })
-
-      // check new version
-      $.getJSON("https://api.github.com/repos/springmaple/rebate-calc/releases/latest", function(data) {
-        let tag = data['tag_name']
-        if (version !== tag) {
-          let url = data['html_url']
-          let lbl = `v ${data['tag_name']} available`
-          $('#mbr-ls-acts').append(`
-            <li>
-              <a href="javascript:openUrl('${url}')" title="${url}" class="mbr-ls-update">${lbl}</a>
-            </li>`)
-
-          $('.mbr-ls-update').hover(function(evt) {
-            $(this).css('animation', 'none')
-          })
-        }
-      })
+    if (window.module) {
+      module = window.module
     }
   </script>
+  <script src="../js/mbr-ls.js"></script>
 
 </head>
 
@@ -251,49 +29,34 @@
   <nav class="navbar navbar-default">
     <div class="container-fluid">
       <div class="navbar-header">
-        <span class="navbar-brand">Select Date</span>
+        <span class="navbar-brand">Select Day</span>
       </div>
-      <ul class="nav navbar-nav" id="working-date-day">
-        <li><a href="javascript:selectDay(0)">10</a></li>
-        <li><a href="javascript:selectDay(1)">20</a></li>
-        <li><a href="javascript:selectDay(2)">30</a></li>
+      <ul class="nav navbar-nav" id="working-day">
+        <li><a href="javascript:selectDay(10)">10</a></li>
+        <li><a href="javascript:selectDay(20)">20</a></li>
+        <li><a href="javascript:selectDay(30)">30</a></li>
       </ul>
     </div>
   </nav>
   
   <ol id="mbr-ls-acts" class="breadcrumb no-print">
-    <li><span id="mbr-app-version"></span></li>
-    <li><a href="javascript:showMbrInfo(null)" title="Ctrl+N">New Member</a></li>
-    <li><a href="javascript:showFind()" title="Ctrl+F">Find Member</a></li>
-    <li><a href="javascript:showPrint()" title="Ctrl+P">Print</a></li>
+    <li><span id="mbr-app-version"><!-- INSERT APP VERSION --></span></li>
+    <li><a href="javascript:showMbrInfo(null)" 
+      title="Ctrl+N">New Member</a></li>
+    <li><a href="javascript:showFind()" 
+      title="Ctrl+F">Find Member</a></li>
+    <li><a href="javascript:showPrint()" 
+      title="Ctrl+P">Print</a></li>
+    <!-- INSERT NEW VERSION IF AVAILABLE -->
   </ol>
-  <script>
-    $('#mbr-app-version').html(`v ${version}`)
-  </script>
 
-  <div class="mbr-find-div"><input id="mbr-find" class="form-control" placeholder="Find by Name or ID" /></div>
-  <script>
-    let mbrFind = $('#mbr-find')
-    mbrFind.focusout(hideFind)
-    mbrFind.keyup(evt => {
-      if (evt.which == 27)  // ESC
-        mbrFind.blur()
-    })
-
-    mbrFindAwesomplete = new Awesomplete(document.getElementById("mbr-find"), {
-      autoFirst: true,
-      minChars: 1,
-      maxItems: 5,
-      item: function(text, input) {
-        let li = document.createElement('li')
-        text = text.split('||')
-				li.innerHTML = `<div class="mbr-ls-find-li"><div>${text[0]}</div><div><small>${text[1]}</small></div></div>`
-        return li
-      }
-    })
-  </script>
+  <div id="mbr-find-div">
+    <input id="mbr-find" class="form-control" 
+      placeholder="Find by Name or ID" />
+  </div>
 
   <div class="mbr-ls-table-title">Name List</div>
+
   <div class="row">
     <div class="col-md-6"></div>
     <div class="col-md-3 text-right">
@@ -305,6 +68,7 @@
       <span id="mbr-total-package">-</span>
     </div>
   </div>
+  
   <table class="table table-condensed table-hover">
     <thead>
       <tr>
@@ -319,29 +83,14 @@
         <th>Join Date</th>
         <th>Package</th>
         <th>Remark</th>
-        <th><input id="mbr-profit" class="mbr-profit no-border-bottom" placeholder="Profit" type="number">%</th>
+        <th><input id="mbr-profit" class="mbr-profit no-border-bottom" 
+          placeholder="Profit" type="number">%</th>
       </tr>
     </thead>
     <tbody id="mbr-ls-table-body">
       <!-- INSERT MBR LS HERE -->
     </tbody>
   </table>
-  <script>
-    let mbrProfit = $('#mbr-profit')
-    mbrProfit.focusout(evt => {
-      let parsedInput = toFloat(mbrProfit.val(), 2)
-      mbrProfit.val(floatToString(parsedInput, 2))
-      ipcRenderer.send('set-mbr-profit', isNaN(parsedInput)?null:parsedInput)
-      lsMbr()
-    })
-    mbrProfit.keypress(evt => {
-      if (evt.which == 13)  // ENTER
-        mbrProfit.blur()
-    })
-    mbrProfit.focus(function() {
-      this.select()
-    })
-  </script>
 </body>
 
 </html>

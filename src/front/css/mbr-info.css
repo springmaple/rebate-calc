@@ -7,6 +7,13 @@ html, body {
   margin-bottom: 20px;
 }
 
+#mbr-update-status {
+	display: none;
+	color: green;
+	margin-left: 20px;
+	font-style: italic;
+}
+
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
     -webkit-appearance: none;
