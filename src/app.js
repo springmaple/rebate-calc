@@ -220,6 +220,7 @@ ipcMain.on('upd-mbr', function (evt, obj) {
     { returnUpdatedDocs: true, multi: false },
     function (err, numAffected, mbr) {
       logErr('upd-mbr', err)
+      mbrDb.persistence.compactDatafile()
       evt.sender.send('mbr', mbr)
     })
 })

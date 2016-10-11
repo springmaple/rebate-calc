@@ -1,2 +1,2 @@
 del dist /F /Q
-electron-packager src calc --platform=win32 --arch=ia32 --out=dist --tmpdir=false --asar
+electron-packager src calc --platform=win32 --arch=ia32 --out=dist --tmpdir=false --asar --win32metadata.CompanyName="" --win32metadata.ProductName="" --win32metadata.FileDescription="" --icon="app.ico"

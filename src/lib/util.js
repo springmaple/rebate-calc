@@ -24,18 +24,6 @@ module.exports = {
     return y * 10000 + m * 100 + d  // e.g 20160920
   },
 
-  joinDate: function(y, m, d) {
-    return y * 10000 + m * 100 + d
-  },
-
-  splitDate: function(d) {
-    return {
-      y: Math.floor(d/10000),
-      m: Math.floor((d%10000)/100),
-      d: Math.floor(d%100)
-    }
-  },
-
   getParamByName: function(name, url) {
     /* Extract query value from URL. */
     name = name.replace(/[\[\]]/g, "\\$&");

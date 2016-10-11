@@ -18,6 +18,11 @@ input[type="number"]::-webkit-inner-spin-button {
   border-bottom: 2px dotted;
 }
 
+.navbar-seperator {
+  display: inline-block;
+  width: 100px;
+}
+
 #mbr-find {
   width: 300px;
 }

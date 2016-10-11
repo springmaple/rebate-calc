@@ -5,7 +5,25 @@ const KEY = { ESC: 27, ENTER: 13, CTRL_N: 14, CTRL_P: 16, CTRL_F: 6 }
 
 var lastHighlightId = null
 var mbrFindAwesomplete = null
+var filterDay = null
+var _mbrs = null
 
+
+function toggleFilter (day) {
+  let elements = $('#filter-day li')
+  let day_ = 10
+  for (let i=0; i<3; i++) {
+    let e = $(elements[i])
+    if (day === day_) {
+      e.toggleClass('active')
+      filterDay = e.hasClass('active')?day_:null
+    } else {
+      e.removeClass('active')
+    }
+    day_ += 10
+  }
+  updMbrsView()
+}
 
 function selectDay (day) {
   ipcRenderer.send('set-working-day', day)
@@ -26,7 +44,9 @@ function scrollTo (element) {
 }
 
 function showMbrInfo (_id) {  // show create new member form if _id is null.
-  ipcRenderer.send('show-page', {_id: _id, name: 'mbr-info'})
+  if (!filterDay || _id) {
+    ipcRenderer.send('show-page', { _id: _id, name: 'mbr-info' })
+  }
 }
 
 function showFind () {
@@ -59,15 +79,14 @@ function checkHasMbr (mbr) {
   return false
 }
 
-ipcRenderer.on('mbrs', function (evt, mbrs) {
-  mbrsLen = mbrs['length']
+function updMbrsView () {
+  mbrsLen = _mbrs['length']
   let mbrTotalPackage = $('#mbr-total-package')
   let mbrTotalHasMbr = $('#mbr-total-has-mbr')
   let mbrLsTableBody = $('#mbr-ls-table-body')
 
   mbrTotalPackage.html('-')
   mbrTotalHasMbr.html('-')
-  
 
   if (!mbrsLen) {
     lastHighlightId = null
@@ -81,23 +100,45 @@ ipcRenderer.on('mbrs', function (evt, mbrs) {
     let mbrFindLs = []
     let mbrLsTableBodyCtnt = ''
 
-    for (let mbr of mbrs) {
+    for (let mbr of _mbrs) {
+      let mbr_id = mbr._id
+      let hasMbrCls = ''
+      let rebateTotal = 0
+      if (!filterDay) {
+        if (checkHasMbr(mbr)) {
+          hasMbrCls = 'class="glyphicon glyphicon-user"'
+          totalHasMbr += 1
+        }
+      } else {
+        for (let i=1; i<=3; i++) {
+          let mbrRebate = mbr['mbrRebate' + i]
+          if (mbrRebate) {
+            for (let mbrRebate_ of mbrRebate) {
+              if (mbrRebate_.mbrDay == filterDay) {
+                let mbrPackage_ = toFloat(mbrRebate_.mbrPackage, 2)
+                if (mbrPackage_) {
+                  rebateTotal += toFloat(mbrPackage_ * i / 100, 2)
+                }
+              }
+            }
+          }
+        }
+        
+        if (rebateTotal <= 0) {
+          continue
+        }
+      }
+
       let profit = 'N/A'
       if (isProfitAvail) {
         let mbrPackage = toFloat(mbr.mbrPackage, 2)
         if (!isNaN(mbrPackage)) {
           totalPackage += mbrPackage
           let profit_ = toFloat(mbrPackage * profitPct / 100, 2)
-          if (!isNaN(profit_))
+          if (!isNaN(profit_)) {
             profit = floatToString(profit_, 2)
+          }
         }
-      }
-
-      let mbr_id = mbr._id
-      let hasMbrCls = ''
-      if (checkHasMbr(mbr)) {
-        hasMbrCls = 'class="glyphicon glyphicon-user"'
-        totalHasMbr += 1
       }
 
       mbrFindLs.push({label: `${mbr.mbrName}||${mbr.mbrId}`, value: mbr_id})
@@ -106,7 +147,7 @@ ipcRenderer.on('mbrs', function (evt, mbrs) {
         <tr class="mbr-tr" mbrId="${mbr_id}" id="mbr-ls-tr-${mbr_id}" 
           onclick="highlight('${mbr_id}')">
           
-          <td><span ${hasMbrCls}></span></td>
+          <td class="has-mbr-col"><span ${hasMbrCls}></span></td>
           <td><a class="no-blue-text" 
             href="javascript:showMbrInfo('${mbr_id}')">${mbr.mbrName}</a></td>
           <td>${mbr.mbrId}</td>
@@ -118,8 +159,13 @@ ipcRenderer.on('mbrs', function (evt, mbrs) {
           <td>${mbr.mbrJoinDate}</td>
           <td>${floatToString(mbr.mbrPackage, 2)}</td>
           <td>${mbr.mbrRemark}</td>
+          <td class="rebate-total-col">${floatToString(rebateTotal, 2)}</td>
           <td>${profit}</td>
         </tr>`
+    }
+
+    if (filterDay && mbrLsTableBodyCtnt === '') {
+      mbrLsTableBodyCtnt = '<tr><td colspan="12">No matching members.</td></tr>'
     }
 
     mbrTotalPackage.html(floatToString(totalPackage))
@@ -133,6 +179,20 @@ ipcRenderer.on('mbrs', function (evt, mbrs) {
       ipcRenderer.send('show-page', {_id: _id, name: 'mbr-rebate'})
     })
   }
+
+  if (filterDay) {
+    $('.has-mbr-col').hide()
+    $('.rebate-total-col').show()
+  } else {
+    $('.has-mbr-col').show()
+    $('.rebate-total-col').hide()
+  }
+}
+
+
+ipcRenderer.on('mbrs', function (evt, mbrs) {
+  _mbrs = mbrs
+  updMbrsView()
 })
 
 ipcRenderer.on('mbr-profit', function (evt, profit) {
@@ -222,13 +282,9 @@ window.onload = function () {
     let tag = data['tag_name']
     if (version !== tag) {
       let url = data['html_url']
-      let lbl = `v ${data['tag_name']} available`
-      $('#mbr-ls-acts').append(`
-        <li>
-          <a href="javascript:openUrl('${url}')" 
-            title="${url}" class="mbr-ls-update">${lbl}</a>
-        </li>`)
-
+      let lbl = `${data['tag_name']}`
+      $('#mbr-new-version').html(` ( <a href="javascript:openUrl('${url}')" 
+        title="${url}" class="mbr-ls-update">${lbl}</a> )`)
       $('.mbr-ls-update').hover(function(evt) {
         $(this).css('animation', 'none')
       })

@@ -100,7 +100,7 @@ ipcRenderer.on('mbr', function (evt, mbr) {
     mbrUpdateStatus.show()
     setTimeout(function () {
       mbrUpdateStatus.fadeOut('fast');
-    }, 1000)
+    }, 400)
   } else {
     _init = false  
   }

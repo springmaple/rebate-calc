@@ -29,22 +29,36 @@
   <nav class="navbar navbar-default">
     <div class="container-fluid">
       <div class="navbar-header">
-        <span class="navbar-brand">Select Day</span>
+        <span class="navbar-brand">Day</span>
       </div>
-      <ul class="nav navbar-nav" id="working-day">
+      <ul id="working-day" class="nav navbar-nav">
         <li><a href="javascript:selectDay(10)">10</a></li>
         <li><a href="javascript:selectDay(20)">20</a></li>
         <li><a href="javascript:selectDay(30)">30</a></li>
       </ul>
+      <div class="navbar-header">
+        <div class="navbar-seperator"></div>
+      </div>
+      <div class="navbar-header">
+        <span class="navbar-brand">Filter</span>
+      </div>
+      <ul id="filter-day" class="nav navbar-nav">
+        <li><a href="javascript:toggleFilter(10)">10</a></li>
+        <li><a href="javascript:toggleFilter(20)">20</a></li>
+        <li><a href="javascript:toggleFilter(30)">30</a></li>
+      </ul>      
     </div>
   </nav>
   
-  <ol id="mbr-ls-acts" class="breadcrumb no-print">
-    <li><span id="mbr-app-version"><!-- INSERT APP VERSION --></span></li>
-    <li><a href="javascript:showMbrInfo(null)" 
-      title="Ctrl+N">New Member</a></li>
+  <ol class="breadcrumb no-print">
+    <li>
+      <span id="mbr-app-version"><!-- INSERT APP VERSION --></span>
+      <span id="mbr-new-version"></span>
+    </li>
+    <li class="has-mbr-col"><a href="javascript:showMbrInfo(null)" 
+      title="Ctrl+N">New</a></li>
     <li><a href="javascript:showFind()" 
-      title="Ctrl+F">Find Member</a></li>
+      title="Ctrl+F">Find</a></li>
     <li><a href="javascript:showPrint()" 
       title="Ctrl+P">Print</a></li>
     <!-- INSERT NEW VERSION IF AVAILABLE -->
@@ -59,7 +73,8 @@
 
   <div class="row">
     <div class="col-md-6"></div>
-    <div class="col-md-3 text-right">
+    <div class="col-md-3 text-right rebate-total-col"></div>
+    <div class="col-md-3 text-right has-mbr-col">
       <span class="glyphicon glyphicon-user"></span>
       <span id="mbr-total-has-mbr">-</span>
     </div>
@@ -72,7 +87,7 @@
   <table class="table table-condensed table-hover">
     <thead>
       <tr>
-        <th></th>
+        <th class="has-mbr-col"></th>
         <th>Name</th>
         <th>ID</th>
         <th>HP No</th>
@@ -83,6 +98,7 @@
         <th>Join Date</th>
         <th>Package</th>
         <th>Remark</th>
+        <th class="rebate-total-col">Filt. Total</th>
         <th><input id="mbr-profit" class="mbr-profit no-border-bottom" 
           placeholder="Profit" type="number">%</th>
       </tr>

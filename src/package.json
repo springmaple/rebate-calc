@@ -1,6 +1,6 @@
 {
   "name": "rebate-calc",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Rebate Calculator",
   "main": "app.js",
   "author": "SpringMaple",
