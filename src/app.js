@@ -196,7 +196,9 @@ ipcMain.on('open-url', function (evt, url) {
 })
 
 ipcMain.on('set-working-day', function (evt, day) {
-  workingDay = parseInt(day)
+  day = parseInt(day)
+  if (!day || isNaN(day)) day = workingDay
+  workingDay = day
   evt.sender.send('working-day', workingDay)
 })
 
@@ -250,11 +252,12 @@ ipcMain.on('ls-mbr', function (evt) {
 })
 
 ipcMain.on('set-pg-dat', function (evt, pgDat) {
+  pgDat._id = 'profit'
   mbrDb.update({ _id: 'profit' }, pgDat,
     { returnUpdatedDocs: true, multi: false, upsert: true },
     function (err, _, pgDat_) {
       logErr('set-pg-dat', err)
-      if (!pgDat_) {
+      if (pgDat_ == null) {
         pgDat_ = {}
       }
       evt.sender.send('pg-dat', pgDat_)

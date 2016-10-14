@@ -19,7 +19,6 @@ function toggleFilter (day) {
     if (day === day_) {
       e.toggleClass('active')
       filterDay = e.hasClass('active')?day_:null
-      console.log('save: ' + filterDay)
       localStorage.setItem('filterDay', filterDay)
     } else {
       e.removeClass('active')
