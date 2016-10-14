@@ -3,10 +3,12 @@ const {toFloat, floatToString} = require('./../../lib/util.js')
 const {version} = require('./../../package.json')
 const KEY = { ESC: 27, ENTER: 13, CTRL_N: 14, CTRL_P: 16, CTRL_F: 6 }
 
+var workingDay = null
+var filterDay = null
+var pgDat = null
 var lastHighlightId = null
 var mbrFindAwesomplete = null
-var filterDay = null
-var _mbrs = null
+var mbrs = null
 
 
 function toggleFilter (day) {
@@ -17,6 +19,8 @@ function toggleFilter (day) {
     if (day === day_) {
       e.toggleClass('active')
       filterDay = e.hasClass('active')?day_:null
+      console.log('save: ' + filterDay)
+      localStorage.setItem('filterDay', filterDay)
     } else {
       e.removeClass('active')
     }
@@ -26,6 +30,7 @@ function toggleFilter (day) {
 }
 
 function selectDay (day) {
+  localStorage.setItem('workingDay', day)
   ipcRenderer.send('set-working-day', day)
 }
 
@@ -80,8 +85,19 @@ function checkHasMbr (mbr) {
 }
 
 function updMbrsView () {
-  mbrsLen = _mbrs['length']
+  let colSpan = (filterDay)?13:12
+
+  let profitPct = toFloat(pgDat['mbrProfit' + workingDay], 2)
+  if (profitPct == null || isNaN(profitPct)) profitPct = null
+  $('#mbr-profit').val(floatToString(profitPct, 2))
+
+  let filtProfitPct = toFloat(pgDat[`mbrFilt${workingDay}_${filterDay}`], 2)
+  if (filtProfitPct == null || isNaN(filtProfitPct)) filtProfitPct = null
+  $('#mbr-filt-profit').val(floatToString(filtProfitPct, 2))
+
+  mbrsLen = mbrs['length']
   let mbrTotalPackage = $('#mbr-total-package')
+  let mbrTotalFilt = $('#mbr-total-filt')
   let mbrTotalHasMbr = $('#mbr-total-has-mbr')
   let mbrLsTableBody = $('#mbr-ls-table-body')
 
@@ -90,20 +106,23 @@ function updMbrsView () {
 
   if (!mbrsLen) {
     lastHighlightId = null
-    mbrLsTableBody.html('<tr><td colspan="12">No records.</td></tr>')
+    mbrLsTableBody.html(`<tr><td colspan="${colSpan}">No members.</td></tr>`)
     mbrFindAwesomplete.list = []
   } else {
-    let profitPct = toFloat($('#mbr-profit').val(), 2)
-    let isProfitAvail = !isNaN(profitPct)
+    let isProfitAvail = (profitPct != null)
     let totalPackage = 0
+    
+    let isFiltProfitAvail = (filtProfitPct != null)
+    let totalFilt = 0
+
     let totalHasMbr = 0
     let mbrFindLs = []
     let mbrLsTableBodyCtnt = ''
 
-    for (let mbr of _mbrs) {
+    for (let mbr of mbrs) {
       let mbr_id = mbr._id
       let hasMbrCls = ''
-      let rebateTotal = 0
+      let filt = 0
       if (!filterDay) {
         if (checkHasMbr(mbr)) {
           hasMbrCls = 'class="glyphicon glyphicon-user"'
@@ -117,29 +136,40 @@ function updMbrsView () {
               if (mbrRebate_.mbrDay == filterDay) {
                 let mbrPackage_ = toFloat(mbrRebate_.mbrPackage, 2)
                 if (mbrPackage_) {
-                  rebateTotal += toFloat(mbrPackage_ * i / 100, 2)
+                  filt += toFloat(mbrPackage_ * i / 100, 2)
                 }
               }
             }
           }
         }
         
-        if (rebateTotal <= 0) {
+        if (filt <= 0) {
           continue
         }
       }
 
       let profit = 'N/A'
-      if (isProfitAvail) {
-        let mbrPackage = toFloat(mbr.mbrPackage, 2)
-        if (!isNaN(mbrPackage)) {
-          totalPackage += mbrPackage
+      let mbrPackage = toFloat(mbr.mbrPackage, 2)
+      if (!isNaN(mbrPackage)) {
+        totalPackage += mbrPackage
+        if (isProfitAvail) {
           let profit_ = toFloat(mbrPackage * profitPct / 100, 2)
           if (!isNaN(profit_)) {
             profit = floatToString(profit_, 2)
           }
         }
       }
+
+      let filtProfit = 'N/A'
+      if (filterDay) {
+        totalFilt += filt
+        if (isFiltProfitAvail) {
+          let filtProfit_ = toFloat(filt * filtProfitPct / 100, 2)
+          if (!isNaN(filtProfit_)) {
+            filtProfit = floatToString(filtProfit_, 2)
+          }
+        }
+      } 
 
       mbrFindLs.push({label: `${mbr.mbrName}||${mbr.mbrId}`, value: mbr_id})
 
@@ -157,18 +187,22 @@ function updMbrsView () {
           <td>${mbr.mbrBankName}</td>
           <td>${mbr.mbrBankAcc}</td>
           <td>${mbr.mbrJoinDate}</td>
-          <td>${floatToString(mbr.mbrPackage, 2)}</td>
           <td>${mbr.mbrRemark}</td>
-          <td class="rebate-total-col">${floatToString(rebateTotal, 2)}</td>
+          <td class="rebate-total-col">${floatToString(filt, 2)}</td>
+          <td class="rebate-total-col">${filtProfit}</td>
+          <td>${floatToString(mbr.mbrPackage, 2)}</td>
           <td>${profit}</td>
         </tr>`
     }
 
     if (filterDay && mbrLsTableBodyCtnt === '') {
-      mbrLsTableBodyCtnt = '<tr><td colspan="12">No matching members.</td></tr>'
+      mbrLsTableBodyCtnt = `<tr>
+        <td colspan="${colSpan}">No matching members.</td>
+      </tr>`
     }
 
-    mbrTotalPackage.html(floatToString(totalPackage))
+    mbrTotalPackage.html(floatToString(totalPackage, 2))
+    mbrTotalFilt.html(floatToString(totalFilt, 2))
     mbrTotalHasMbr.html(totalHasMbr.toString())
     mbrLsTableBody.html(mbrLsTableBodyCtnt)
     mbrFindAwesomplete.list = mbrFindLs
@@ -190,17 +224,18 @@ function updMbrsView () {
 }
 
 
-ipcRenderer.on('mbrs', function (evt, mbrs) {
-  _mbrs = mbrs
+ipcRenderer.on('mbrs', function (evt, mbrs_) {
+  mbrs = mbrs_
   updMbrsView()
 })
 
-ipcRenderer.on('mbr-profit', function (evt, profit) {
-  $('#mbr-profit').val(floatToString(profit, 2))
+ipcRenderer.on('pg-dat', function (evt, pgDat_) {
+  pgDat = pgDat_
   ipcRenderer.send('ls-mbr', null)
 })
 
 ipcRenderer.on('working-day', function (evt, day) {
+  workingDay = day
   let elements = $('#working-day li')
   let day_ = 10
   for (let i=0; i<3; i++) {
@@ -209,7 +244,7 @@ ipcRenderer.on('working-day', function (evt, day) {
     else e.removeClass('active')
     day_ += 10
   }
-  ipcRenderer.send('get-mbr-profit', null)
+  ipcRenderer.send('get-pg-dat', null)
 })
 
 
@@ -248,13 +283,32 @@ window.onload = function () {
   let mbrProfit = $('#mbr-profit')
   mbrProfit.focusout(function (evt) {
     let parsedInput = toFloat(mbrProfit.val(), 2)
+    if (isNaN(parsedInput)) parsedInput = null
     mbrProfit.val(floatToString(parsedInput, 2))
-    ipcRenderer.send('set-mbr-profit', isNaN(parsedInput)?null:parsedInput)
+    pgDat['mbrProfit' + workingDay] = parsedInput
+    ipcRenderer.send('set-pg-dat', pgDat)
   })
   mbrProfit.keypress(function (evt) {
     if (evt.which === KEY.ENTER) mbrProfit.blur()
   })
   mbrProfit.focus(function () {
+    this.select()
+  })
+
+  let mbrFilt = $('#mbr-filt-profit')
+  mbrFilt.focusout(function (evt) {
+    if (filterDay) {
+      let parsedInput = toFloat(mbrFilt.val(), 2)
+      if (isNaN(parsedInput)) parsedInput = null
+      mbrFilt.val(floatToString(parsedInput, 2))
+      pgDat[`mbrFilt${workingDay}_${filterDay}`] = parsedInput
+      ipcRenderer.send('set-pg-dat', pgDat)
+    }
+  })
+  mbrFilt.keypress(function (evt) {
+    if (evt.which === KEY.ENTER) mbrFilt.blur()
+  })
+  mbrFilt.focus(function () {
     this.select()
   })
 
@@ -273,7 +327,21 @@ window.onload = function () {
   })
 
   // init data
-  ipcRenderer.send('get-working-day', null)
+  filterDay = parseInt(localStorage.getItem('filterDay'))
+  if ([10, 20, 30].includes(filterDay)) {
+    let elements = $('#filter-day li')
+    let e = $(elements[(filterDay / 10) - 1])
+    e.addClass('active')
+  } else {
+    filterDay = null
+  }
+
+  workingDay_ = parseInt(localStorage.getItem('workingDay'))
+  if ([10, 20, 30].includes(workingDay_)) {
+    ipcRenderer.send('set-working-day', workingDay_)
+  } else {
+    ipcRenderer.send('get-working-day', null)
+  }
 
   // check new version
   let updUrl = (
@@ -291,4 +359,3 @@ window.onload = function () {
     }
   })
 }
-

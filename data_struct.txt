@@ -30,7 +30,15 @@ Database Structure > v 0.2.0 (calc.dat2)
   mbrProfit10 (float, null): Profit value for day 10.
   mbrProfit20 (float, null): Profit value for day 20.
   mbrProfit30 (float, null): Profit value for day 30.
-  
+  mbrFilt10_10 (float, null): Member filter percetage for day 10, filt 10.
+  mbrFilt10_20 (float, null): Member filter percetage for day 10, filt 20.
+  mbrFilt10_30 (float, null): Member filter percetage for day 10, filt 30.
+  mbrFilt20_10 (float, null): Member filter percetage for day 20, filt 10.
+  mbrFilt20_20 (float, null): Member filter percetage for day 20, filt 20.
+  mbrFilt20_30 (float, null): Member filter percetage for day 20, filt 30.
+  mbrFilt30_10 (float, null): Member filter percetage for day 30, filt 10.
+  mbrFilt30_20 (float, null): Member filter percetage for day 30, filt 20.
+  mbrFilt30_30 (float, null): Member filter percetage for day 30, filt 30.
 
 Database Structure prior v 0.2.0 (calc.dat)
 ===========================================

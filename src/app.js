@@ -249,27 +249,24 @@ ipcMain.on('ls-mbr', function (evt) {
   }) 
 })
 
-ipcMain.on('set-mbr-profit', function (evt, profit) {
-  let updData = {}
-  updData['mbrProfit' + workingDay] = profit
-  mbrDb.update(
-    { _id: 'profit' }, 
-    { $set: updData }, 
+ipcMain.on('set-pg-dat', function (evt, pgDat) {
+  mbrDb.update({ _id: 'profit' }, pgDat,
     { returnUpdatedDocs: true, multi: false, upsert: true },
-    function (err) {
-      logErr('set-mbr-profit', err)
-      evt.sender.send('mbr-profit', profit)
+    function (err, _, pgDat_) {
+      logErr('set-pg-dat', err)
+      if (!pgDat_) {
+        pgDat_ = {}
+      }
+      evt.sender.send('pg-dat', pgDat_)
     })
 })
 
-ipcMain.on('get-mbr-profit', function (evt) {
-  mbrDb.findOne({ _id: 'profit' }, function (err, profit) {
-    logErr('get-mbr-profit', err)
-    let profit_ = null
-    if (profit) {
-      let mbrProfit = profit['mbrProfit' + workingDay]
-      if (mbrProfit) profit_ = mbrProfit
+ipcMain.on('get-pg-dat', function (evt) {
+  mbrDb.findOne({ _id: 'profit' }, function (err, pgDat) {
+    logErr('get-pg-dat', err)
+    if (!pgDat) {
+      pgDat = {}
     }
-    evt.sender.send('mbr-profit', profit_)
+    evt.sender.send('pg-dat', pgDat)
   })
 })

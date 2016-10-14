@@ -73,14 +73,17 @@
 
   <div class="row">
     <div class="col-md-6"></div>
-    <div class="col-md-3 text-right rebate-total-col"></div>
     <div class="col-md-3 text-right has-mbr-col">
       <span class="glyphicon glyphicon-user"></span>
       <span id="mbr-total-has-mbr">-</span>
     </div>
+    <div class="col-md-3 text-right rebate-total-col">
+      <span><strong>Filt Total:</strong></span>
+      <span class="mbr-total" id="mbr-total-filt">-</span>
+    </div>
     <div class="col-md-3 text-right">
       <span><strong>Package Total:</strong></span>
-      <span id="mbr-total-package">-</span>
+      <span class="mbr-total" id="mbr-total-package">-</span>
     </div>
   </div>
   
@@ -96,9 +99,12 @@
         <th>Bank Name</th>
         <th>Bank Acc</th>
         <th>Join Date</th>
-        <th>Package</th>
         <th>Remark</th>
-        <th class="rebate-total-col">Filt. Total</th>
+        <th class="rebate-total-col">Filt</th>
+        <th class="rebate-total-col">
+          <input id="mbr-filt-profit" class="mbr-profit no-border-bottom" 
+            placeholder="Profit" type="number">%</th>
+        <th>Package</th>
         <th><input id="mbr-profit" class="mbr-profit no-border-bottom" 
           placeholder="Profit" type="number">%</th>
       </tr>

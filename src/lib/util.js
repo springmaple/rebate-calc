@@ -9,7 +9,7 @@ module.exports = {
     let d = Math.round(date.getDate() / 10) * 10
     if (d <= 10)
       d = 10
-    else if (n > 30)
+    else if (d > 30)
       d = 30
     return d
   },
