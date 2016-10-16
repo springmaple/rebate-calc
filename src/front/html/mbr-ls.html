@@ -73,15 +73,18 @@
 
   <div class="row">
     <div class="col-md-6"></div>
-    <div class="col-md-3 text-right has-mbr-col">
-      <span class="glyphicon glyphicon-user"></span>
-      <span id="mbr-total-has-mbr">-</span>
-    </div>
+
+    <div class="col-md-3 text-right rebate-total-col"></div>
     <div class="col-md-3 text-right rebate-total-col">
       <span><strong>Filt Total:</strong></span>
       <span class="mbr-total" id="mbr-total-filt">-</span>
     </div>
-    <div class="col-md-3 text-right">
+
+    <div class="col-md-3 text-right has-mbr-col">
+      <span class="glyphicon glyphicon-user"></span>
+      <span id="mbr-total-has-mbr">-</span>
+    </div>
+    <div class="col-md-3 text-right has-mbr-col">
       <span><strong>Package Total:</strong></span>
       <span class="mbr-total" id="mbr-total-package">-</span>
     </div>
@@ -103,9 +106,10 @@
         <th class="rebate-total-col">Filt</th>
         <th class="rebate-total-col">
           <input id="mbr-filt-profit" class="mbr-profit no-border-bottom" 
-            placeholder="Filt" type="number">%</th>
-        <th>Package</th>
-        <th><input id="mbr-profit" class="mbr-profit no-border-bottom" 
+            placeholder="*" type="number"></th>
+        <th class="has-mbr-col">Package</th>
+        <th class="has-mbr-col"><input id="mbr-profit" 
+          class="mbr-profit no-border-bottom"
           placeholder="Profit" type="number">%</th>
       </tr>
     </thead>

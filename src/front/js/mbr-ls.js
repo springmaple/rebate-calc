@@ -84,7 +84,7 @@ function checkHasMbr (mbr) {
 }
 
 function updMbrsView () {
-  let colSpan = (filterDay)?13:12
+  let colSpan = (filterDay)?11:12
 
   let profitPct = toFloat(pgDat['mbrProfit' + workingDay], 2)
   if (profitPct == null || isNaN(profitPct)) profitPct = null
@@ -102,6 +102,7 @@ function updMbrsView () {
 
   mbrTotalPackage.html('-')
   mbrTotalHasMbr.html('-')
+  mbrTotalFilt.html('-')
 
   if (!mbrsLen) {
     lastHighlightId = null
@@ -141,20 +142,22 @@ function updMbrsView () {
             }
           }
         }
-        
+
         if (filt <= 0) {
           continue
         }
       }
 
       let profit = 'N/A'
-      let mbrPackage = toFloat(mbr.mbrPackage, 2)
-      if (!isNaN(mbrPackage)) {
-        totalPackage += mbrPackage
-        if (isProfitAvail) {
-          let profit_ = toFloat(mbrPackage * profitPct / 100, 2)
-          if (!isNaN(profit_)) {
-            profit = floatToString(profit_, 2)
+      if (!filterDay) {
+        let mbrPackage = toFloat(mbr.mbrPackage, 2)
+        if (!isNaN(mbrPackage)) {
+          totalPackage += mbrPackage
+          if (isProfitAvail) {
+            let profit_ = toFloat(mbrPackage * profitPct / 100, 2)
+            if (!isNaN(profit_)) {
+              profit = floatToString(profit_, 2)
+            }
           }
         }
       }
@@ -163,7 +166,7 @@ function updMbrsView () {
       if (filterDay) {
         totalFilt += filt
         if (isFiltProfitAvail) {
-          let filtProfit_ = toFloat(filt * filtProfitPct / 100, 2)
+          let filtProfit_ = toFloat(filt * filtProfitPct, 2)
           if (!isNaN(filtProfit_)) {
             filtProfit = floatToString(filtProfit_, 2)
           }
@@ -189,8 +192,8 @@ function updMbrsView () {
           <td>${mbr.mbrRemark}</td>
           <td class="rebate-total-col">${floatToString(filt, 2)}</td>
           <td class="rebate-total-col">${filtProfit}</td>
-          <td>${floatToString(mbr.mbrPackage, 2)}</td>
-          <td>${profit}</td>
+          <td class="has-mbr-col">${floatToString(mbr.mbrPackage, 2)}</td>
+          <td class="has-mbr-col">${profit}</td>
         </tr>`
     }
 
@@ -201,7 +204,8 @@ function updMbrsView () {
     }
 
     mbrTotalPackage.html(floatToString(totalPackage, 2))
-    mbrTotalFilt.html(floatToString(totalFilt, 2))
+    if (totalFilt == 0) mbrTotalFilt.html('N/A')
+    else mbrTotalFilt.html(floatToString(totalFilt, 2))
     mbrTotalHasMbr.html(totalHasMbr.toString())
     mbrLsTableBody.html(mbrLsTableBodyCtnt)
     mbrFindAwesomplete.list = mbrFindLs
