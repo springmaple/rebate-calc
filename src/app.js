@@ -3,8 +3,8 @@ const Datastore = require('nedb')
 const Util = require('./lib/util.js')
 const fs = require('fs')
 const htmlPath = `file://${__dirname}/front/html`
-const oldDbPath = `${__dirname}\\..\\..\\calc.dat`
-const newDbPath = `${__dirname}\\..\\..\\calc.dat2`
+const oldDbPath = `${__dirname}/../../calc.dat`
+const newDbPath = `${__dirname}/../../calc.dat2`
 
 
 var mbrDb = null

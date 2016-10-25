@@ -1,0 +1,1 @@
+src/node_modules/.bin/electron src/ --enable-logging
