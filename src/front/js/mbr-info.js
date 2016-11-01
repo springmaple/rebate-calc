@@ -1,5 +1,7 @@
-const {ipcRenderer} = require('electron')
+const {ipcRenderer, remote} = require('electron')
+const {dialog} = remote
 const {getParamByName, floatToString} = require('./../../lib/util.js')
+const currentWindow = remote.getCurrentWindow()
 const _id = getParamByName('_id', window.location.href)
 const map = {
   mbrName: 'mbr-name',
@@ -16,7 +18,14 @@ const map = {
 
 var _mbr = null
 var _init = true
+var _leave_page = false
+var _leave_reason = 'close'  // can be 'close' or <location url>
 
+
+function goTo (pageUrl) {
+  _leave_reason = pageUrl
+  window.location = pageUrl
+}
 
 function rmErr () {
   $('#form-error').html('')
@@ -40,6 +49,20 @@ function prevalidate () {
   let mbrPackage = $('#mbr-package') 
   mbrPackage.val(floatToString(mbrPackage.val()))
   return true
+}
+
+function hasMbrChange () {
+  for (let key in map) {
+    let value = $(`#${map[key]}`).val()
+    if (_mbr == null) {
+      if (value != null && value.length > 0) {
+        return true
+      }
+    } else if (value != _mbr[key]) {
+      return true
+    }
+  }
+  return false
 }
 
 function getMbrChange () {
@@ -68,25 +91,54 @@ function updMbr () {
   if (!$.isEmptyObject(mbrToUpd)) {
     ipcRenderer.send('upd-mbr', { _id: _id, mbr: mbrToUpd })
   }
+  return true
 }
 
 function delMbr () {
-  if (confirm("Press OK to confirm delete member.")) {
+  let msg = 'Confirm to delete member? You cannot undo after member is deleted.' 
+  let rsp = dialog.showMessageBox(
+    currentWindow,
+    {
+      type: 'question',
+      title: 'Delete Member',
+      message: msg,
+      buttons: ['Cancel', 'Delete']
+    })
+  if (rsp === 1) {
     ipcRenderer.send('del-mbr', _id)
   }
 }
 
 function cnlUpdMbr () {
-  let mbr_ = getMbrChange()
-  if ($.isEmptyObject(mbr_) || 
-      confirm("Unsaved changes will be lost, confirm to cancel?")) {
-    window.close()
+  if (hasMbrChange()) {
+    let rsp = dialog.showMessageBox(
+      currentWindow,
+      {
+        type: 'question',
+        title: 'Unsaved Changes',
+        message: 'Confirm to discard all changes?',
+        buttons: ['No', 'Discard']
+      })
+    if (rsp !== 1) {
+      return
+    }
   }
+  _leave_page = true
+  window.close()
 }
 
 ipcRenderer.on('mbr', function (evt, mbr) {
   if (!_id || mbr._rmDate) {
     window.close()
+    return
+  }
+
+  if (_leave_page) {
+    if (_leave_reason === 'close') {
+      window.close()
+    } else {
+      window.location = _leave_reason
+    }
     return
   }
 
@@ -147,7 +199,7 @@ window.onload = function () {
     btnHtml = `
       <div>
         <span>
-          <button onclick="updMbr()" class="btn btn-primary">Update</button>
+          <button onclick="updMbr()" class="btn btn-primary">Save</button>
           <button onclick="cnlUpdMbr()" class="btn btn-default">Cancel</button>
           <span id="mbr-update-status">Changes saved!</span>
         </span>
@@ -158,7 +210,7 @@ window.onload = function () {
   } else {
     btnHtml = `
       <button onclick="addMbr()" class="btn btn-primary">Create Member</button>
-      <button onclick="cnlUpdMbr()" class="btn btn-default">Cancel</button>`
+      <button onclick="window.close()" class="btn btn-default">Cancel</button>`
   }
 
   mbrInfoCtnt += `
@@ -181,11 +233,72 @@ window.onload = function () {
   if (_id) {
     ipcRenderer.send('get-mbr', _id)
 
+    calc_url = `mbr-rebate.html?_id=${_id}`
     $('#mbr-navibar').html(`
       <ul class="nav nav-tabs nav-justified">
         <li class="active"><a href="#">Info</a></li>
-        <li><a href="mbr-rebate.html?_id=${_id}">Calculator</a></li>
+        <li><a href="javascript:goTo('${calc_url}')">Calculator</a></li>
       </ul>`)
   }
   $('#rebate-mbr-info').html(mbrInfoCtnt)
+}
+
+window.onbeforeunload = function (evt) {
+  if (_leave_page)
+    return
+
+  if (hasMbrChange()) {
+    evt.returnValue = 'false'
+
+    if (_mbr == null) {
+      dialog.showMessageBox(
+        currentWindow,
+        {
+          type: 'question',
+          title: 'Unsaved Data',
+          message: 'Confirm to discard all data?',
+          buttons: ['No', 'Discard']
+        },
+        function (rsp) {
+          if (rsp === 1) {
+            _leave_page = true
+            if (_leave_reason === 'close') {
+              window.close()
+            } else {
+              window.location = _leave_reason
+            }
+          } else {
+            _leave_page = false
+            _leave_reason = 'close'
+          }
+        }
+      )
+    } else {
+      dialog.showMessageBox(
+        currentWindow,
+        {
+          type: 'question',
+          title: 'Unsaved Changes',
+          message: 'Do you want to save all changes?',
+          buttons: ['Save', "Don't Save", 'Cancel']
+        },
+        function (rsp) {
+          _leave_page = true
+          if (rsp === 0) {
+            if (updMbr()) {
+              return
+            }
+          } else if (rsp === 1) {
+            if (_leave_reason === 'close') {
+              window.close()
+            } else {
+              window.location = _leave_reason
+            }
+            return
+          }
+          _leave_page = false
+          _leave_reason = 'close'
+        })
+    }
+  }
 }
