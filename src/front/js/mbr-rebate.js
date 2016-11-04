@@ -1,5 +1,6 @@
 const {getParamByName, floatToString, toFloat} = require('./../../lib/util.js')
-const {ipcRenderer} = require('electron')
+const {ipcRenderer, remote} = require('electron')
+const currentWindow = remote.getCurrentWindow()
 const _id = getParamByName('_id', window.location.href)
 
 var _mbr = null
@@ -262,28 +263,28 @@ function initUI () {
             <li class="list-group-item">
               <div class="btn-group" data-toggle="buttons">
                 <label class="btn btn-default">
-                  <input name="${rebateMbrDateId}" i="${i}" 
+                  <input name="${rebateMbrDateId}" i="${i}" j="${j}"
                     val="10" type="checkbox" />10
                 </label>
                 <label class="btn btn-default">
-                  <input name="${rebateMbrDateId}" i="${i}" 
+                  <input name="${rebateMbrDateId}" i="${i}" j="${j}"
                     val="20" type="checkbox" />20
                 </label>
                 <label class="btn btn-default">
-                  <input name="${rebateMbrDateId}" i="${i}" 
+                  <input name="${rebateMbrDateId}" i="${i}" j="${j}"
                     val="30" type="checkbox" />30
                 </label>
               </div>
             </li>
 
             <li class="list-group-item">
-              <input id="${rebateMbrNameId}" class="cnt-input" i="${i}"
-                placeholder="Name" />
+              <input id="${rebateMbrNameId}" class="cnt-input" 
+                i="${i}" j="${j}" placeholder="Name" />
             </li>
 
             <li class="list-group-item">
-              <input id="${rebateMbrPackageId}" class="cnt-input" i="${i}"
-                type="number" placeholder="Package" />
+              <input id="${rebateMbrPackageId}" class="cnt-input" 
+                i="${i}" j="${j}" type="number" placeholder="Package" />
             </li>
           </ul>
         </li>`
@@ -297,7 +298,8 @@ function initUI () {
       rebateMbrPackage.focusout(function (evt) {
         let e = $(this)
         let inp = toFloat(e.val(), 2)
-        e.val(floatToString(inp, 2))
+        let val = floatToString(inp, 2) 
+        e.val(val)
         save(e.attr('i'))
       })
       rebateMbrPackage.keypress(function (evt) {
