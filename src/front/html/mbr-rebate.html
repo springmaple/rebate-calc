@@ -30,10 +30,15 @@
     <!-- INSERT MBR INFO ELEMENTS HERE -->
   </form>
 
-  <div id="rebate-btns">
-    <button onclick="updMbr()" class="btn btn-primary">Save</button>
-    <button onclick="cnlUpdMbr()" class="btn btn-default">Cancel</button>
-    <span id="mbr-update-status">Changes saved!</span>
+  <div>
+    <span>
+      <button onclick="saveOnlyIfChange()" class="btn btn-primary">Save</button>
+      <button onclick="window.close()" class="btn btn-default">Cancel</button>
+      <span id="mbr-save-status">Changes saved!</span>
+    </span>
+    <span style="float: right">
+      <button onclick="resetChanges()" class="btn btn-danger">Reset Changes</button>
+    </span>
   </div>
 
   <div id="rebate-panels"><!-- INSERT 3 PANELS --></div>

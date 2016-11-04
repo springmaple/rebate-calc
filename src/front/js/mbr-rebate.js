@@ -1,10 +1,26 @@
 const {getParamByName, floatToString, toFloat} = require('./../../lib/util.js')
 const {ipcRenderer, remote} = require('electron')
+const {dialog} = remote
 const currentWindow = remote.getCurrentWindow()
 const _id = getParamByName('_id', window.location.href)
 
-var _mbr = null
+var _mbrRebates = null  // stores mbrRebates values since last saved.
+var _currentMbrRebates = null
+var _saveCalled = false
+var _leave_page = false
+var _leave_reason = 'close'  // can be 'close' or <location url>
 
+
+function goTo (pageUrl) {
+  _leave_reason = pageUrl
+  // TODO: not working
+  currentWindow.loadURL(pageUrl)
+  // TODO: add printtopdf function in listing page.
+}
+
+function getMbr () {
+  ipcRenderer.send('get-mbr', _id)
+}
 
 function selectMbrDay (i, j, selectedVal, isToggle) {
   let rebateMbrDatesId = `input:checkbox[name="rebate-mbr-date-${i}-${j}"]`
@@ -23,43 +39,64 @@ function selectMbrDay (i, j, selectedVal, isToggle) {
   }
 }
 
-function save (i) {
-  let rebateMbrLs = []
-  let rebateMbrMbr = {}
-  rebateMbrMbr['mbrRebate' + i] = rebateMbrLs
-  let rebateMbrSave = { _id: _id, mbr: rebateMbrMbr }
+function getSelectedMbrDay (i, j) {
+  let rebateMbrDatesId = `input:checkbox[name="rebate-mbr-date-${i}-${j}"]`
+  let rebateMbrDates = $(rebateMbrDatesId)
+  for (let k=0; k<3; k++) {
+    let e = $(rebateMbrDates[k])
+    if (e.parent().hasClass('active')) {
+      return e.attr('val')
+    }
+  }
+  return null
+}
 
-  for (let j=0; j<30; j++) {
-    let rebateMbrDatesId = `input:checkbox[name="rebate-mbr-date-${i}-${j}"]`
-    let rebateMbrNameId = `#rebate-mbr-name-${i}-${j}`
-    let rebateMbrPackageId = `#rebate-mbr-package-${i}-${j}`
-
-    let mbrPackage = toFloat($(rebateMbrPackageId).val(), 2)
-    let mbrDate = null
-    let rebateMbrDates = $(rebateMbrDatesId)
-    for (let k=0; k<3; k++) {
-      let e = $(rebateMbrDates[k])
-      if (e.parent().hasClass('active')) {
-        mbrDate = e.attr('val')
-        break
+function hasUnsavedChanges () {
+  for (let key in _currentMbrRebates) {
+    let mbrRebate1 = _mbrRebates[key]
+    let mbrRebate2 = _currentMbrRebates[key]
+    for (let i=0; i<mbrRebate1.length; i++) {
+      let item1 = mbrRebate1[i]
+      let item2 = mbrRebate2[i]
+      if (item1.mbrDay != item2.mbrDay || 
+          item1.mbrName != item2.mbrName ||
+          item1.mbrPackage != item2.mbrPackage) {
+        return true      
       }
     }
-
-    if (isNaN(mbrPackage)) {
-      mbrPackage = null
-    }
-    rebateMbrLs.push({
-      mbrName: $(rebateMbrNameId).val(), 
-      mbrDay: mbrDate, 
-      mbrPackage: mbrPackage
-    })
   }
+  return false
+}
 
-  ipcRenderer.send('upd-mbr', rebateMbrSave)
+function save () {
+  ipcRenderer.send('upd-mbr', { _id: _id, mbr: _currentMbrRebates })
+}
+
+function saveOnlyIfChange () {
+  if (hasUnsavedChanges()) {
+    _saveCalled = true
+    save()
+  }
+}
+
+function resetChanges () {
+  if (hasUnsavedChanges()) {
+    let rsp = dialog.showMessageBox(
+      currentWindow,
+      {
+        type: 'question',
+        title: 'Reset Changes',
+        message: 'All changes will be lost, confirm to reset?',
+        buttons: ['No', 'Reset']
+      })
+    if (rsp === 1) {
+      getMbr()
+    }
+  }
 }
 
 function updTotal () {
-  if (!_mbr) return
+  if (!_currentMbrRebates) return
 
   let subTotal = {
     1: { 10: 0, 20: 0, 30: 0 },
@@ -73,7 +110,7 @@ function updTotal () {
   }
 
   for (let i=1; i<=3; i++) {
-    let mbrRebate = _mbr['mbrRebate' + i]
+    let mbrRebate = _currentMbrRebates['mbrRebate' + i]
     if (!mbrRebate) continue
 
     let subTotal_ = subTotal[i]
@@ -120,13 +157,40 @@ function updTotal () {
     $(`#rebate-total-${k}`).html(floatToString(total[k], 2))
     $(`#rebate-total-${k}-count`).html(totalCnt[k])
   }
+}
 
+function buildMbrRebatesFromDOM () {
+  let mbrRebates = {}
+
+  for (let i=1; i<=3; i++) {
+    let rebateMbrLs = []
+    mbrRebates['mbrRebate' + i] = rebateMbrLs
+
+    for (let j=0; j<30; j++) {
+      let rebateMbrNameId = `#rebate-mbr-name-${i}-${j}`
+      let rebateMbrPackageId = `#rebate-mbr-package-${i}-${j}`
+
+      let mbrPackage = toFloat($(rebateMbrPackageId).val(), 2)      
+
+      if (isNaN(mbrPackage)) {
+        mbrPackage = null
+      }
+      rebateMbrLs.push({
+        mbrName: $(rebateMbrNameId).val(), 
+        mbrDay: getSelectedMbrDay(i, j), 
+        mbrPackage: mbrPackage
+      })
+    }
+  }
+
+  return mbrRebates
 }
 
 function initUI () {
+  info_url = `mbr-info.html?_id=${_id}`
   $('#mbr-navibar').html(`
     <ul class="nav nav-tabs nav-justified">
-      <li><a href="mbr-info.html?_id=${_id}">Info</a></li>
+      <li><a href="javascript:goTo('${info_url}')">Info</a></li>
       <li class="active"><a href="">Calculator</a></li>
     </ul>`)
 
@@ -300,7 +364,12 @@ function initUI () {
         let inp = toFloat(e.val(), 2)
         let val = floatToString(inp, 2) 
         e.val(val)
-        save(e.attr('i'))
+        let i = e.attr('i')
+        let j = e.attr('j')
+        let mbrRebate = _currentMbrRebates['mbrRebate' + i][parseInt(j)] 
+        mbrRebate.mbrPackage = val
+        highlightFrame(i, j, mbrRebate)
+        updTotal()
       })
       rebateMbrPackage.keypress(function (evt) {
         if (evt.which == 13) {
@@ -313,7 +382,10 @@ function initUI () {
 
       let rebateMbrName = $(`#rebate-mbr-name-${i}-${j}`)
       rebateMbrName.focusout(function (evt) {
-        save(rebateMbrName.attr('i'))
+        let e = $(this)
+        let i = e.attr('i')
+        let j = e.attr('j')
+        _currentMbrRebates['mbrRebate' + i][parseInt(j)].mbrName = e.val()
       })
       rebateMbrName.keypress(function (evt) {
         if (evt.which == 13) {
@@ -323,17 +395,41 @@ function initUI () {
        
       let rebateMbrDatesId = `input:checkbox[name="rebate-mbr-date-${i}-${j}"]`
       $(rebateMbrDatesId).change({i: i, j: j}, function (evt) {
-        let selectedVal = $(this).attr('val')
+        let e = $(this)
+        let selectedVal = e.attr('val')
+        let i = e.attr('i')
+        let j = e.attr('j')
         selectMbrDay(evt.data.i, evt.data.j, selectedVal, true)
-        save($(this).attr('i'))
+
+        let mbrRebate = _currentMbrRebates['mbrRebate' + i][parseInt(j)] 
+        mbrRebate.mbrDay = getSelectedMbrDay(i, j)
+        highlightFrame(i, j, mbrRebate)
+        updTotal()
       })
     }
   }
 }
 
+function highlightFrame (i, j, mbrRebate) {
+  let c = 'rebate-panel-active-10 rebate-panel-active-20 rebate-panel-active-30'
+  let rebateMbrBox = $(`#rebate-mbr-${i}-${j}`)
+  rebateMbrBox.removeClass(c)
+  if (mbrRebate && mbrRebate.mbrDay && mbrRebate.mbrPackage && 
+      parseFloat(mbrRebate.mbrPackage) > 0) {
+    rebateMbrBox.addClass(`rebate-panel-active-${mbrRebate.mbrDay}`)
+  }
+}
+
 
 ipcRenderer.on('mbr', function (evt, mbr) {
-  _mbr = mbr
+  if (_leave_page) {
+    if (_leave_reason === 'close') {
+      window.close()
+    } else {
+      window.location = _leave_reason
+    }
+  }
+
   let map = {
     mbrName: 'mbr-name',
     mbrEmail: 'mbr-email',
@@ -345,32 +441,76 @@ ipcRenderer.on('mbr', function (evt, mbr) {
     $(`#${map[key]}`).html(mbr[key])
   }
 
-  let c = 'rebate-panel-active-10 rebate-panel-active-20 rebate-panel-active-30'
   for (let i=1; i<=3; i++) {
-    let mbrRebate = mbr['mbrRebate' + i]
-    if (mbrRebate) {
-      for (let j=0; j<30; j++) {
-        let {mbrDay, mbrName, mbrPackage} = mbrRebate[j]
-        if (mbrDay != null) {
-          selectMbrDay(i, j, mbrDay)
-        }
-        $(`#rebate-mbr-name-${i}-${j}`).val(mbrName)
-        $(`#rebate-mbr-package-${i}-${j}`).val(floatToString(mbrPackage, 2))
-
-        let rebateMbrBox = $(`#rebate-mbr-${i}-${j}`)
-        rebateMbrBox.removeClass(c)
-        if (mbrPackage && mbrDay) {
-          rebateMbrBox.addClass(`rebate-panel-active-${mbrDay}`)
-        }
+    let mbrRebateLs = mbr['mbrRebate' + i]
+    for (let j=0; j<30; j++) {
+      let mbrRebate = null
+      let mbrDay = null
+      let mbrName = null
+      let mbrPackage = null
+      if (mbrRebateLs) {
+        mbrRebate = mbrRebateLs[j]
+        mbrDay = mbrRebate.mbrDay
+        mbrName = mbrRebate.mbrName
+        mbrPackage = mbrRebate.mbrPackage 
       }
+      selectMbrDay(i, j, mbrDay)
+      $(`#rebate-mbr-name-${i}-${j}`).val(mbrName)
+      $(`#rebate-mbr-package-${i}-${j}`).val(floatToString(mbrPackage, 2))
+      highlightFrame(i, j, mbrRebate)
     }
   }
 
+  _mbrRebates = buildMbrRebatesFromDOM()
+  _currentMbrRebates = JSON.parse(JSON.stringify(_mbrRebates))
+
   updTotal()
+
+  if (_saveCalled) {
+    _saveCalled = false
+    let mbrSaveStatus = $('#mbr-save-status')
+    mbrSaveStatus.show()
+    setTimeout(function () {
+      mbrSaveStatus.fadeOut('fast');
+    }, 400)
+  }
 })
 
 
 window.onload = function () {
   initUI()
-  ipcRenderer.send('get-mbr', _id)
+  getMbr()
+}
+
+window.onbeforeunload = function (evt) {
+  if (_leave_page)
+    return
+
+  if (hasUnsavedChanges()) {
+    evt.returnValue = 'false'
+    dialog.showMessageBox(
+      currentWindow,
+      {
+        type: 'question',
+        title: 'Unsaved Changes',
+        message: 'Do you want to save all changes?',
+        buttons: ['Save', "Don't Save", 'Cancel']
+      },
+      function (rsp) {
+        _leave_page = true
+        if (rsp === 0) {
+          save()
+          return
+        } else if (rsp === 1) {
+          if (_leave_reason === 'close') {
+            window.close()
+          } else {
+            window.location = _leave_reason
+          }
+          return
+        }
+        _leave_page = false
+        _leave_reason = 'close'
+      })
+  }
 }

@@ -102,3 +102,14 @@ input[type="number"]::-webkit-inner-spin-button {
 .rebate-panel-active-30 {
   box-shadow: 0px 0px 1px 1px blue;
 }
+
+#rebate-panels {
+  margin-top: 20px;
+}
+
+#mbr-save-status {
+	display: none;
+	color: green;
+	margin-left: 20px;
+	font-style: italic;
+}
