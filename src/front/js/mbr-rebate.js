@@ -7,6 +7,7 @@ const _id = getParamByName('_id', window.location.href)
 var _mbrRebates = null  // stores mbrRebates values since last saved.
 var _currentMbrRebates = null
 var _saveCalled = false
+var _history = []
 var _leave_page = false
 var _leave_reason = 'close'  // can be 'close' or <location url>
 
@@ -99,7 +100,33 @@ function resetChanges () {
 }
 
 function undoChanges () {
-  currentWindow.webContents.undo()
+  $(document.activeElement).blur()
+
+  let history = _history.pop()
+  if (history == null) {
+    return
+  }
+
+  let {i, j, type, val} = history
+  let mbrRebate = _currentMbrRebates['mbrRebate' + i][parseInt(j)]
+  if (type == 'mbrPackage') {
+    let rebateMbrPackage = $(`#rebate-mbr-package-${i}-${j}`)
+    mbrRebate.mbrPackage = val
+    rebateMbrPackage.val(val)
+    highlightFrame(i, j, mbrRebate)
+    updTotal()
+    rebateMbrPackage.focus()
+  } else if (type == 'mbrName') {
+    let rebateMbrName = $(`#rebate-mbr-name-${i}-${j}`)
+    mbrRebate.mbrName = val
+    rebateMbrName.val(val)
+    rebateMbrName.focus()
+  } else if (type == 'mbrDay') {
+    mbrRebate.mbrDay = val
+    selectMbrDay(i, j, val, false)
+    highlightFrame(i, j, mbrRebate)
+    updTotal()
+  }
 }
 
 function updTotal () {
@@ -387,12 +414,21 @@ function initUI () {
       rebateMbrPackage.focusout(function (evt) {
         let e = $(this)
         let inp = toFloat(e.val(), 2)
+        if (isNaN(inp) || inp == null) {
+          inp = null
+        }
         let i = e.attr('i')
         let j = e.attr('j')
         let mbrRebate = _currentMbrRebates['mbrRebate' + i][parseInt(j)]
-        if (inp != toFloat(mbrRebate.mbrPackage, 2)) {
-          let val = floatToString(inp, 2) 
+        let mbrRebateVal = toFloat(mbrRebate.mbrPackage, 2)
+        if (isNaN(mbrRebateVal) || mbrRebateVal == null) {
+          mbrRebateVal = null
+        }
+        if (inp != mbrRebateVal) {
+          let val = floatToString(inp, 2)
           e.val(val)
+          _history.push({type: 'mbrPackage', i: i, j: j, 
+                         val: mbrRebateVal})
           mbrRebate.mbrPackage = inp
           highlightFrame(i, j, mbrRebate)
           updTotal()
@@ -412,7 +448,12 @@ function initUI () {
         let e = $(this)
         let i = e.attr('i')
         let j = e.attr('j')
-        _currentMbrRebates['mbrRebate' + i][parseInt(j)].mbrName = e.val()
+        let mbrRebate = _currentMbrRebates['mbrRebate' + i][parseInt(j)]
+        let val = e.val()
+        if (val != mbrRebate.mbrName) {
+          _history.push({type: 'mbrName', i: i, j: j, val: mbrRebate.mbrName})
+          mbrRebate.mbrName = val 
+        }
       })
       rebateMbrName.keypress(function (evt) {
         if (evt.which == 13) {
@@ -428,7 +469,9 @@ function initUI () {
         let j = e.attr('j')
         selectMbrDay(i, j, selectedVal, true)
 
-        let mbrRebate = _currentMbrRebates['mbrRebate' + i][parseInt(j)] 
+        let mbrRebate = _currentMbrRebates['mbrRebate' + i][parseInt(j)]
+
+        _history.push({type: 'mbrDay', i: i, j: j, val: mbrRebate.mbrDay})
         mbrRebate.mbrDay = getSelectedMbrDay(i, j)
         highlightFrame(i, j, mbrRebate)
         updTotal()
@@ -460,7 +503,7 @@ ipcRenderer.on('mbr', function (evt, mbr) {
 
   if (_saveCalled) {
     _mbrRebates = mbr
-    
+
     let mbrSaveStatus = $('#mbr-save-status')
     mbrSaveStatus.show()
     setTimeout(function () {
