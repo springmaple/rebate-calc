@@ -13,9 +13,12 @@ var _leave_reason = 'close'  // can be 'close' or <location url>
 
 function goTo (pageUrl) {
   _leave_reason = pageUrl
-  // TODO: not working
-  currentWindow.loadURL(pageUrl)
-  // TODO: add printtopdf function in listing page.
+  if (hasUnsavedChanges()) {
+    window.close()
+  } else {
+    _leave_page = true
+    window.location = pageUrl
+  }
 }
 
 function getMbr () {
@@ -93,6 +96,10 @@ function resetChanges () {
       getMbr()
     }
   }
+}
+
+function undoChanges () {
+  currentWindow.webContents.undo()
 }
 
 function updTotal () {
@@ -253,14 +260,26 @@ function initUI () {
                 </thead>
                 <tbody>
                   <tr>
-                    <td><span id="rebate-subtotal-${i}-10-total">0</span></td>
-                    <td><span id="rebate-subtotal-${i}-20-total">0</span></td>
-                    <td><span id="rebate-subtotal-${i}-30-total">0</span></td>
+                    <td class="text-right">
+                      <span id="rebate-subtotal-${i}-10-total">0</span>
+                    </td>
+                    <td class="text-right">
+                      <span id="rebate-subtotal-${i}-20-total">0</span>
+                    </td>
+                    <td class="text-right">
+                      <span id="rebate-subtotal-${i}-30-total">0</span>
+                    </td>
                   </tr>
                   <tr>
-                    <td><span id="rebate-subtotal-${i}-10">0</span></td>
-                    <td><span id="rebate-subtotal-${i}-20">0</span></td>
-                    <td><span id="rebate-subtotal-${i}-30">0</span></td>
+                    <td class="text-right">
+                      <span id="rebate-subtotal-${i}-10">0</span>
+                    </td>
+                    <td class="text-right">
+                      <span id="rebate-subtotal-${i}-20">0</span>
+                    </td>
+                    <td class="text-right">
+                      <span id="rebate-subtotal-${i}-30">0</span>
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -302,9 +321,15 @@ function initUI () {
               </thead>
               <tbody>
                 <tr>
-                  <td><span id="rebate-total-10">0</span></td>
-                  <td><span id="rebate-total-20">0</span></td>
-                  <td><span id="rebate-total-30">0</span></td>
+                  <td class="text-right">
+                    <span id="rebate-total-10">0</span>
+                  </td>
+                  <td class="text-right">
+                    <span id="rebate-total-20">0</span>
+                  </td>
+                  <td class="text-right">
+                    <span id="rebate-total-30">0</span>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -362,14 +387,16 @@ function initUI () {
       rebateMbrPackage.focusout(function (evt) {
         let e = $(this)
         let inp = toFloat(e.val(), 2)
-        let val = floatToString(inp, 2) 
-        e.val(val)
         let i = e.attr('i')
         let j = e.attr('j')
-        let mbrRebate = _currentMbrRebates['mbrRebate' + i][parseInt(j)] 
-        mbrRebate.mbrPackage = val
-        highlightFrame(i, j, mbrRebate)
-        updTotal()
+        let mbrRebate = _currentMbrRebates['mbrRebate' + i][parseInt(j)]
+        if (inp != toFloat(mbrRebate.mbrPackage, 2)) {
+          let val = floatToString(inp, 2) 
+          e.val(val)
+          mbrRebate.mbrPackage = inp
+          highlightFrame(i, j, mbrRebate)
+          updTotal()
+        }
       })
       rebateMbrPackage.keypress(function (evt) {
         if (evt.which == 13) {
@@ -392,14 +419,14 @@ function initUI () {
           $(this).blur()
         }
       })
-       
+
       let rebateMbrDatesId = `input:checkbox[name="rebate-mbr-date-${i}-${j}"]`
-      $(rebateMbrDatesId).change({i: i, j: j}, function (evt) {
+      $(rebateMbrDatesId).change(function (evt) {
         let e = $(this)
         let selectedVal = e.attr('val')
         let i = e.attr('i')
         let j = e.attr('j')
-        selectMbrDay(evt.data.i, evt.data.j, selectedVal, true)
+        selectMbrDay(i, j, selectedVal, true)
 
         let mbrRebate = _currentMbrRebates['mbrRebate' + i][parseInt(j)] 
         mbrRebate.mbrDay = getSelectedMbrDay(i, j)
@@ -428,6 +455,19 @@ ipcRenderer.on('mbr', function (evt, mbr) {
     } else {
       window.location = _leave_reason
     }
+    return
+  }
+
+  if (_saveCalled) {
+    _mbrRebates = mbr
+    
+    let mbrSaveStatus = $('#mbr-save-status')
+    mbrSaveStatus.show()
+    setTimeout(function () {
+      mbrSaveStatus.fadeOut('fast');
+    }, 400)
+
+    return
   }
 
   let map = {
@@ -466,14 +506,8 @@ ipcRenderer.on('mbr', function (evt, mbr) {
 
   updTotal()
 
-  if (_saveCalled) {
-    _saveCalled = false
-    let mbrSaveStatus = $('#mbr-save-status')
-    mbrSaveStatus.show()
-    setTimeout(function () {
-      mbrSaveStatus.fadeOut('fast');
-    }, 400)
-  }
+  $('#body-container').show()
+  $('#loader').hide()
 })
 
 

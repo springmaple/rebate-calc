@@ -3,6 +3,25 @@ html, body {
   padding: 10px;
 }
 
+#body-container {
+  display: none;
+}
+
+@keyframes spin {
+    from {transform:rotate(0deg);}
+    to {transform:rotate(360deg);}
+}
+
+#loader > span {
+  animation: spin .7s linear infinite;
+  font-size: 20pt;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin-right: -50%;
+  transform: translate(-50%, -50%) 
+}
+
 #mbr-navibar {
   margin-bottom: 20px;
 }

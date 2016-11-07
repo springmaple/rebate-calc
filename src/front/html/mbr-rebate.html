@@ -24,24 +24,35 @@
 </head>
 
 <body>
-  <div id="mbr-navibar"><!-- INSERT NAVI BAR --></div>
-
-  <form id="rebate-mbr-info" class="form-horizontal">
-    <!-- INSERT MBR INFO ELEMENTS HERE -->
-  </form>
-
-  <div>
-    <span>
-      <button onclick="saveOnlyIfChange()" class="btn btn-primary">Save</button>
-      <button onclick="window.close()" class="btn btn-default">Cancel</button>
-      <span id="mbr-save-status">Changes saved!</span>
-    </span>
-    <span style="float: right">
-      <button onclick="resetChanges()" class="btn btn-danger">Reset Changes</button>
-    </span>
+  <div id="loader">
+    <span class="glyphicon glyphicon-refresh animate"></span>
   </div>
 
-  <div id="rebate-panels"><!-- INSERT 3 PANELS --></div>
+  <div id="body-container">
+    <div id="mbr-navibar"><!-- INSERT NAVI BAR --></div>
+
+    <form id="rebate-mbr-info" class="form-horizontal">
+      <!-- INSERT MBR INFO ELEMENTS HERE -->
+    </form>
+
+    <div>
+      <span>
+        <button onclick="saveOnlyIfChange()" class="btn btn-primary">Save</button>
+        <button onclick="window.close()" class="btn btn-default">Cancel</button>
+        <span id="mbr-save-status">Changes saved!</span>
+      </span>
+      <span style="float: right">
+        <button onclick="undoChanges()" class="btn btn-default" 
+            style="transform: scale(-1, 1);">
+          <span class="glyphicon glyphicon-repeat" aria-hidden="true"></span>
+        </button>
+        <button onclick="resetChanges()"
+          class="btn btn-danger">Reset Changes</button>
+      </span>
+    </div>
+
+    <div id="rebate-panels"><!-- INSERT 3 PANELS --></div>
+  </div>
 
 </body>
 

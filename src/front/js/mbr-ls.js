@@ -190,10 +190,10 @@ function updMbrsView () {
           <td>${mbr.mbrBankAcc}</td>
           <td>${mbr.mbrJoinDate}</td>
           <td>${mbr.mbrRemark}</td>
-          <td class="rebate-total-col">${floatToString(filt, 2)}</td>
-          <td class="rebate-total-col">${filtProfit}</td>
-          <td class="has-mbr-col">${floatToString(mbr.mbrPackage, 2)}</td>
-          <td class="has-mbr-col">${profit}</td>
+          <td class="rebate-total-col text-right">${floatToString(filt, 2)}</td>
+          <td class="rebate-total-col text-right">${filtProfit}</td>
+          <td class="has-mbr-col text-right">${floatToString(mbr.mbrPackage, 2)}</td>
+          <td class="has-mbr-col text-right">${profit}</td>
         </tr>`
     }
 

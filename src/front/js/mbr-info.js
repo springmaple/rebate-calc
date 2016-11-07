@@ -24,7 +24,12 @@ var _leave_reason = 'close'  // can be 'close' or <location url>
 
 function goTo (pageUrl) {
   _leave_reason = pageUrl
-  window.location = pageUrl
+  if (hasMbrChange()) {
+    window.close()
+  } else {
+    _leave_page = true
+    window.location = pageUrl
+  }
 }
 
 function rmErr () {
@@ -81,6 +86,7 @@ function addMbr () {
   let mbrToIns = {}
   for (let key in map)
     mbrToIns[key] = $(`#${map[key]}`).val()
+
   ipcRenderer.send('add-mbr', mbrToIns)
 }
 
@@ -129,6 +135,8 @@ function cnlUpdMbr () {
 
 ipcRenderer.on('mbr', function (evt, mbr) {
   if (!_id || mbr._rmDate) {
+    _leave_page = true
+    _leave_reason = 'close'
     window.close()
     return
   }
@@ -154,7 +162,9 @@ ipcRenderer.on('mbr', function (evt, mbr) {
       mbrUpdateStatus.fadeOut('fast');
     }, 400)
   } else {
-    _init = false  
+    _init = false
+    $('#body-container').show()
+    $('#loader').hide()
   }
 })
 
@@ -209,7 +219,7 @@ window.onload = function () {
       </div>`
   } else {
     btnHtml = `
-      <button onclick="addMbr()" class="btn btn-primary">Create Member</button>
+      <button onclick="addMbr()" class="btn btn-primary">New Member</button>
       <button onclick="window.close()" class="btn btn-default">Cancel</button>`
   }
 
@@ -241,6 +251,11 @@ window.onload = function () {
       </ul>`)
   }
   $('#rebate-mbr-info').html(mbrInfoCtnt)
+
+  if (!_id) {
+    $('#body-container').show()
+    $('#loader').hide()
+  }
 }
 
 window.onbeforeunload = function (evt) {
@@ -267,10 +282,10 @@ window.onbeforeunload = function (evt) {
             } else {
               window.location = _leave_reason
             }
-          } else {
-            _leave_page = false
-            _leave_reason = 'close'
+            return
           }
+          _leave_page = false
+          _leave_reason = 'close'
         }
       )
     } else {
