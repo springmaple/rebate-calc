@@ -1,14 +1,14 @@
 const {ipcRenderer} = require('electron')
 const {toFloat, floatToString} = require('./../../lib/util.js')
-const {version} = require('./../../package.json')
+const {appVersion} = require('./../../package.json')
 const KEY = { ESC: 27, ENTER: 13, CTRL_N: 14, CTRL_P: 16, CTRL_F: 6 }
 
-var workingDay = null
-var filterDay = null
-var pgDat = null
-var lastHighlightId = null
-var mbrFindAwesomplete = null
-var mbrs = null
+var workingDay = null  // current selected working day, e.g 10, 20, 30.
+var filterDay = null  // current selected filter day, e.g 10, 20, 30.
+var pgDat = null  // page data, e.g profit %, filter multiplier.
+var lastHighlightId = null  // last selected row number starts from 0.
+var mbrFindAwesomplete = null  // Awesomeplete object for `Find`. 
+var mbrs = null  // all members, latest data from database.
 
 
 function toggleFilter (day) {
@@ -18,7 +18,7 @@ function toggleFilter (day) {
     let e = $(elements[i])
     if (day === day_) {
       e.toggleClass('active')
-      filterDay = e.hasClass('active')?day_:null
+      filterDay = e.hasClass('active') ? day_ : null
       localStorage.setItem('filterDay', filterDay)
     } else {
       e.removeClass('active')
@@ -253,7 +253,7 @@ ipcRenderer.on('working-day', function (evt, day) {
 
 window.onload = function () {
   // init UI
-  $('#mbr-app-version').html(`v ${version}`)
+  $('#mbr-app-version').html(`v ${appVersion}`)
 
   let mbrFind = $('#mbr-find')
   let mbrFindDiv = $('#mbr-find-div')
@@ -315,7 +315,7 @@ window.onload = function () {
     this.select()
   })
 
-  $("body").keypress(function (evt) {
+  $('body').keypress(function (evt) {
     if (evt.which === KEY.CTRL_N) showMbrInfo(null)
     else if (evt.which === KEY.CTRL_F) showFind()
     else if (evt.which === KEY.CTRL_P) showPrint()
@@ -351,7 +351,7 @@ window.onload = function () {
     'https://api.github.com/repos/springmaple/rebate-calc/releases/latest')
   $.getJSON(updUrl, function (data) {
     let tag = data['tag_name']
-    if (version !== tag) {
+    if (appVersion !== tag) {
       let url = data['html_url']
       let lbl = `${data['tag_name']}`
       $('#mbr-new-version').html(` ( <a href="javascript:openUrl('${url}')" 
